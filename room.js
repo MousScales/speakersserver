@@ -476,6 +476,15 @@ function updateSpeakersList() {
             tile.appendChild(badge);
         }
         
+        // Check if muted and show indicator
+        const participantIdentity = speaker.user_id;
+        if (mutedParticipants.has(participantIdentity)) {
+            const muteIndicator = tile.querySelector('.mute-indicator');
+            if (muteIndicator) {
+                muteIndicator.style.display = 'block';
+            }
+        }
+        
         // Add click handler to edit/interact
         tile.addEventListener('click', () => {
             showParticipantMenu(speaker);
@@ -845,13 +854,28 @@ window.toggleMuteParticipant = function(userId) {
             audioElement.volume = 1.0;
         });
         
-        // Update mute indicator on video tile
-        const tile = document.querySelector(`[data-participant-id="${participantIdentity}"]`);
-        if (tile) {
+        // Update mute indicator on all tiles (speakers and audience)
+        const tiles = document.querySelectorAll(`[data-participant-id="${participantIdentity}"]`);
+        tiles.forEach(tile => {
             const muteIndicator = tile.querySelector('.mute-indicator');
             if (muteIndicator) {
                 muteIndicator.style.display = 'none';
             }
+        });
+        
+        // Also check audience members by username
+        const participantData = participants.find(p => p.user_id === participantIdentity);
+        if (participantData) {
+            const audienceTiles = document.querySelectorAll('.audience-member');
+            audienceTiles.forEach(audienceTile => {
+                const nameElement = audienceTile.querySelector('.audience-member-name');
+                if (nameElement && nameElement.textContent === participantData.username) {
+                    const muteIndicator = audienceTile.querySelector('.mute-indicator');
+                    if (muteIndicator) {
+                        muteIndicator.style.display = 'none';
+                    }
+                }
+            });
         }
         
         console.log('🔊 Unmuted participant:', participantIdentity, '(for you only)');
@@ -867,13 +891,46 @@ window.toggleMuteParticipant = function(userId) {
             audioElement.volume = 0;
         });
         
-        // Update mute indicator on video tile
-        const tile = document.querySelector(`[data-participant-id="${participantIdentity}"]`);
-        if (tile) {
+        // Update mute indicator on all tiles (speakers and audience)
+        const tiles = document.querySelectorAll(`[data-participant-id="${participantIdentity}"]`);
+        tiles.forEach(tile => {
             const muteIndicator = tile.querySelector('.mute-indicator');
             if (muteIndicator) {
                 muteIndicator.style.display = 'block';
             }
+        });
+        
+        // Also check audience members by username
+        const participantData = participants.find(p => p.user_id === participantIdentity);
+        if (participantData) {
+            const audienceTiles = document.querySelectorAll('.audience-member');
+            audienceTiles.forEach(audienceTile => {
+                const nameElement = audienceTile.querySelector('.audience-member-name');
+                if (nameElement && nameElement.textContent === participantData.username) {
+                    let muteIndicator = audienceTile.querySelector('.mute-indicator');
+                    if (!muteIndicator) {
+                        // Create mute indicator if it doesn't exist
+                        muteIndicator = document.createElement('div');
+                        muteIndicator.className = 'mute-indicator';
+                        muteIndicator.innerHTML = '🔇';
+                        muteIndicator.style.position = 'absolute';
+                        muteIndicator.style.bottom = '8px';
+                        muteIndicator.style.right = '8px';
+                        muteIndicator.style.background = 'rgba(239, 68, 68, 0.9)';
+                        muteIndicator.style.color = 'white';
+                        muteIndicator.style.padding = '4px 8px';
+                        muteIndicator.style.borderRadius = '4px';
+                        muteIndicator.style.fontSize = '12px';
+                        muteIndicator.style.zIndex = '10';
+                        const avatar = audienceTile.querySelector('.audience-member-avatar');
+                        if (avatar) {
+                            avatar.style.position = 'relative';
+                            avatar.appendChild(muteIndicator);
+                        }
+                    }
+                    muteIndicator.style.display = 'block';
+                }
+            });
         }
         
         console.log('🔇 Muted participant:', participantIdentity, '(for you only)');
@@ -1956,15 +2013,15 @@ function createParticipantTile(identity, participantName) {
     nameLabel.className = 'speaker-name';
     nameLabel.textContent = participantName;
     
-    // Mute indicator (shows if muted by current user)
+    // Mute indicator (shows if muted by current user) - bottom right
     const muteIndicator = document.createElement('div');
     muteIndicator.className = 'mute-indicator';
     muteIndicator.innerHTML = '🔇';
     muteIndicator.style.display = 'none';
     muteIndicator.style.position = 'absolute';
-    muteIndicator.style.top = '8px';
+    muteIndicator.style.bottom = '8px';
     muteIndicator.style.right = '8px';
-    muteIndicator.style.background = 'rgba(0, 0, 0, 0.7)';
+    muteIndicator.style.background = 'rgba(239, 68, 68, 0.9)';
     muteIndicator.style.padding = '4px 8px';
     muteIndicator.style.borderRadius = '4px';
     muteIndicator.style.fontSize = '14px';

@@ -231,7 +231,6 @@
 }
 
 .speaker-tile:hover {
-    transform: scale(1.05);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -481,7 +480,7 @@
 }
 
 .audience-member:hover {
-    transform: translateY(-4px);
+    /* Hover effect removed */
 }
 
 .audience-member-avatar {
