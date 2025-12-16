@@ -381,7 +381,7 @@
 /* Mute indicator */
 .mute-indicator {
     position: absolute;
-    top: 8px;
+    bottom: 8px;
     right: 8px;
     background: rgba(239, 68, 68, 0.9);
     color: white;
