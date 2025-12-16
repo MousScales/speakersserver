@@ -1666,12 +1666,7 @@ function createParticipantTile(identity, participantName) {
     const firstLetter = participantName.split('_')[0].charAt(0).toUpperCase() || '?';
     avatar.textContent = firstLetter;
     
-    const statusText = document.createElement('div');
-    statusText.className = 'status-text';
-    statusText.textContent = 'Camera off';
-    
     placeholder.appendChild(avatar);
-    placeholder.appendChild(statusText);
     
     // Name label (always visible)
     const nameLabel = document.createElement('div');
