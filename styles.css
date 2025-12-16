@@ -47,25 +47,92 @@ header .container {
 }
 
 .logo h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     color: var(--primary-color);
     font-weight: 700;
+    margin-bottom: 0.25rem;
 }
 
-nav {
+.logo .tagline {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* Info Button */
+.info-btn {
     display: flex;
-    gap: 2rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-.nav-link {
-    color: var(--text-color);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
+.info-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.nav-link:hover {
+.info-btn:active {
+    transform: translateY(0);
+}
+
+.info-icon {
+    font-size: 1.2rem;
+}
+
+/* Info Modal Content */
+.info-content {
+    padding: 1rem 0;
+}
+
+.info-content h3 {
     color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.info-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.info-content ul, .info-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.info-content li {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.info-content li strong {
+    color: var(--primary-color);
+}
+
+.info-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.info-footer p {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
 /* Rooms Section */

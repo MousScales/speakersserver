@@ -306,9 +306,51 @@
 
 .speakers-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
     width: 100%;
+    align-content: start;
+}
+
+/* Dynamic grid - Zoom/Discord style */
+.speakers-container[data-count="1"] {
+    grid-template-columns: 1fr;
+}
+
+.speakers-container[data-count="2"] {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.speakers-container[data-count="3"],
+.speakers-container[data-count="4"] {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.speakers-container[data-count="5"],
+.speakers-container[data-count="6"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.speakers-container[data-count="7"],
+.speakers-container[data-count="8"],
+.speakers-container[data-count="9"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* 10+ participants */
+.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]) {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1200px) {
+    .speakers-container:not([data-count="1"]) {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .speakers-container {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .speaker-tile {
@@ -323,6 +365,31 @@
     overflow: hidden;
     border: 3px solid transparent;
     transition: border-color 0.2s;
+    min-height: 150px;
+}
+
+/* Adaptive sizing based on count */
+.speakers-container[data-count="1"] .speaker-tile {
+    max-height: 80vh;
+}
+
+.speakers-container[data-count="2"] .speaker-tile,
+.speakers-container[data-count="3"] .speaker-tile,
+.speakers-container[data-count="4"] .speaker-tile {
+    max-height: 50vh;
+}
+
+.speakers-container[data-count="5"] .speaker-tile,
+.speakers-container[data-count="6"] .speaker-tile,
+.speakers-container[data-count="7"] .speaker-tile,
+.speakers-container[data-count="8"] .speaker-tile,
+.speakers-container[data-count="9"] .speaker-tile {
+    max-height: 35vh;
+}
+
+.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]) .speaker-tile {
+    aspect-ratio: 4/3;
+    max-height: 25vh;
 }
 
 .speaker-tile.speaking {
@@ -345,6 +412,67 @@
     height: 100%;
     object-fit: cover;
     border-radius: 8px;
+    display: block;
+}
+
+/* Video placeholder */
+.speaker-tile .video-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    z-index: 1;
+}
+
+.speaker-tile .video-placeholder .avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 12px;
+}
+
+.speaker-tile .video-placeholder .status-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.speaker-tile.has-video .video-placeholder {
+    display: none;
+}
+
+/* Adaptive avatar sizes */
+.speakers-container[data-count="1"] .speaker-tile .video-placeholder .avatar {
+    width: 120px;
+    height: 120px;
+    font-size: 54px;
+}
+
+.speakers-container[data-count="2"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="3"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="4"] .speaker-tile .video-placeholder .avatar {
+    width: 100px;
+    height: 100px;
+    font-size: 48px;
+}
+
+.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]) .speaker-tile .video-placeholder .avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
 }
 
 .speaker-avatar {

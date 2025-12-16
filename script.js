@@ -7,6 +7,11 @@ const discussionForm = document.getElementById('discussionForm');
 const roomsGrid = document.getElementById('roomsGrid');
 const tabs = document.querySelectorAll('.tab');
 
+// Info modal elements
+const infoBtn = document.getElementById('infoBtn');
+const infoModal = document.getElementById('infoModal');
+const closeInfoModal = document.getElementById('closeInfoModal');
+
 // Tab filtering functionality
 let currentCategory = 'all';
 let allRooms = []; // Store all rooms from database

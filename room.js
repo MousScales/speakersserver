@@ -448,25 +448,38 @@ window.inviteToSpeak = async function(userId) {
     }
 };
 
-// Remove from speakers
-window.removeFromSpeakers = async function(userId) {
-    try {
-        const { error } = await supabase
-            .from('room_participants')
-            .update({ 
-                is_speaking: false,
-                role: 'participant'
-            })
-            .eq('room_id', roomId)
-            .eq('user_id', userId);
+// Client-side mute/unmute (only for the person who clicks it)
+window.toggleMuteParticipant = function(userId) {
+    if (mutedParticipants.has(userId)) {
+        // Unmute
+        mutedParticipants.delete(userId);
         
-        if (error) throw error;
+        // Find and unmute the audio element
+        const audioElement = document.querySelector(`audio[data-participant-id="${userId}"]`);
+        if (audioElement) {
+            audioElement.muted = false;
+            audioElement.volume = 1.0;
+            console.log('🔊 Unmuted participant:', userId);
+        }
         
-        showNotification('Removed from speakers', 'success');
+        showNotification('Participant unmuted (for you)', 'success');
+    } else {
+        // Mute
+        mutedParticipants.add(userId);
         
-    } catch (error) {
-        console.error('Error removing from speakers:', error);
+        // Find and mute the audio element
+        const audioElement = document.querySelector(`audio[data-participant-id="${userId}"]`);
+        if (audioElement) {
+            audioElement.muted = true;
+            audioElement.volume = 0;
+            console.log('🔇 Muted participant:', userId);
+        }
+        
+        showNotification('Participant muted (for you)', 'success');
     }
+    
+    // Refresh panel to update button text
+    loadParticipants();
 };
 
 // Make moderator (host only)
