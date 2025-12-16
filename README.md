@@ -58,6 +58,10 @@ cp config.example.js config.js
 cp token-server.example.js token-server.js
 ```
 
+**Get your credentials from:**
+- Supabase: https://supabase.com/dashboard → Settings → API
+- LiveKit: https://cloud.livekit.io → Settings → Keys
+
 Edit `config.js`:
 ```javascript
 const SUPABASE_URL = 'your_supabase_url';
@@ -70,6 +74,8 @@ Edit `token-server.js`:
 const LIVEKIT_API_KEY = 'your_api_key';
 const LIVEKIT_API_SECRET = 'your_api_secret';
 ```
+
+See `env.example` for detailed instructions on getting these values.
 
 4. **Setup Supabase Database**
 

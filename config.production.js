@@ -1,16 +1,44 @@
 // Production Configuration for Vercel Deployment
-// This file uses the deployed serverless function
+// This file fetches credentials from environment endpoint
 
-// Supabase Configuration
-const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
+// Fetch configuration from environment
+async function loadConfig() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        return config;
+    } catch (error) {
+        console.error('Failed to load config:', error);
+        throw new Error('Configuration not available');
+    }
+}
 
-// LiveKit Configuration
-const LIVEKIT_URL = 'wss://speakersserver-0je4i45z.livekit.cloud';
+// Initialize app with configuration
+let supabase;
+let LIVEKIT_URL;
+let TOKEN_SERVER_URL;
 
-// Use Vercel serverless function (will be /api/token on your deployed domain)
-const TOKEN_SERVER_URL = window.location.origin + '/api/token';
-
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+(async function initConfig() {
+    try {
+        const config = await loadConfig();
+        
+        // Initialize Supabase client
+        supabase = window.supabase.createClient(
+            config.SUPABASE_URL,
+            config.SUPABASE_ANON_KEY
+        );
+        
+        LIVEKIT_URL = config.LIVEKIT_URL;
+        TOKEN_SERVER_URL = window.location.origin + '/api/token';
+        
+        console.log('✅ Configuration loaded successfully');
+        
+        // Trigger app initialization event
+        window.dispatchEvent(new Event('config-loaded'));
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize configuration:', error);
+        alert('Failed to load application configuration. Please check your environment variables.');
+    }
+})();
 

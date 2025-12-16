@@ -15,10 +15,6 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "env": {
-    "LIVEKIT_API_KEY": "@livekit_api_key",
-    "LIVEKIT_API_SECRET": "@livekit_api_secret"
-  }
+  ]
 }
 

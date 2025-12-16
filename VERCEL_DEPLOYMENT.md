@@ -34,10 +34,13 @@ Your project is already configured for Vercel! Here's what's included:
    - Output Directory: `./`
 5. **Add Environment Variables** (IMPORTANT):
    - Click "Environment Variables"
-   - Add these:
+   - Add **ALL** these (see `env.example` for where to get values):
      ```
-     LIVEKIT_API_KEY = API4vYKAgCCYFfW
-     LIVEKIT_API_SECRET = HBsTvf1UVnlwCMijpfaFM6Jc7uqcaMHQorKILreF0r4B
+     SUPABASE_URL = [Your Supabase Project URL]
+     SUPABASE_ANON_KEY = [Your Supabase Anon Key]
+     LIVEKIT_URL = [Your LiveKit WebSocket URL]
+     LIVEKIT_API_KEY = [Your LiveKit API Key]
+     LIVEKIT_API_SECRET = [Your LiveKit API Secret]
      ```
 6. **Deploy**: Click "Deploy"
 
@@ -56,16 +59,26 @@ vercel
 # Follow the prompts
 ```
 
-## 🔐 Step 3: Set Environment Variables
+## 🔐 Step 3: Set Environment Variables (IMPORTANT!)
 
-After deployment, if you didn't add them during setup:
+You **MUST** add these environment variables in Vercel:
 
 1. Go to your project on Vercel
 2. Settings → Environment Variables
-3. Add:
-   - `LIVEKIT_API_KEY` = `API4vYKAgCCYFfW`
-   - `LIVEKIT_API_SECRET` = `HBsTvf1UVnlwCMijpfaFM6Jc7uqcaMHQorKILreF0r4B`
-4. Redeploy (Vercel will do this automatically)
+3. Add **ALL** of these:
+   
+   **Supabase** (Get from: https://supabase.com/dashboard → Project → Settings → API):
+   - `SUPABASE_URL` = Your Supabase Project URL
+   - `SUPABASE_ANON_KEY` = Your Supabase anon/public key
+   
+   **LiveKit** (Get from: https://cloud.livekit.io → Project → Settings):
+   - `LIVEKIT_URL` = Your LiveKit WebSocket URL (starts with wss://)
+   - `LIVEKIT_API_KEY` = Your LiveKit API Key
+   - `LIVEKIT_API_SECRET` = Your LiveKit API Secret
+
+4. Select "Production", "Preview", and "Development" for all variables
+5. Click "Save"
+6. Redeploy (Vercel will do this automatically)
 
 ## 📝 Step 4: Update Production Config
 

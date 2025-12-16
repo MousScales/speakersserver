@@ -2,16 +2,14 @@
 config.js
 token-server.js
 
-# Production config is safe to commit (uses serverless function)
-!config.production.js
+# Environment files (contains secrets)
+.env
+.env.*
+!env.example
 
 # Node modules
 node_modules/
 package-lock.json
-
-# Environment files
-.env
-.env.local
 
 # OS files
 .DS_Store
