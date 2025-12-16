@@ -468,10 +468,10 @@ function updateAudienceList() {
     
     const allAudience = participants.filter(p => !p.is_speaking);
     const raisedHands = allAudience.filter(p => p.hand_raised);
-    const regularAudience = allAudience.filter(p => !p.hand_raised);
     
+    // Audience count includes everyone (including raised hands)
     if (audienceCount) {
-        audienceCount.textContent = regularAudience.length;
+        audienceCount.textContent = allAudience.length;
     }
     
     // Update raised hands section
@@ -490,17 +490,18 @@ function updateAudienceList() {
         }
     }
     
-    // Update regular audience list
+    // Update regular audience list - includes ALL audience (including raised hands)
     audienceList.innerHTML = '';
     
     // Filter by search if applicable
     const searchTerm = audienceSearch ? audienceSearch.value.toLowerCase() : '';
     const filteredAudience = searchTerm 
-        ? regularAudience.filter(p => p.username.toLowerCase().includes(searchTerm))
-        : regularAudience;
+        ? allAudience.filter(p => p.username.toLowerCase().includes(searchTerm))
+        : allAudience;
     
     filteredAudience.forEach(member => {
-        const memberElement = createAudienceMemberElement(member, false);
+        // Show hand raise icon if they have raised hand, but they're still in regular audience
+        const memberElement = createAudienceMemberElement(member, member.hand_raised);
         audienceList.appendChild(memberElement);
     });
 }
