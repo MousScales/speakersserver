@@ -130,6 +130,8 @@ header .container {
     padding: 0.5rem;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     letter-spacing: 0.01em;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .info-btn:hover {
