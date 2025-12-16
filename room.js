@@ -843,11 +843,17 @@ async function connectToLiveKit(canPublish = true) {
 
 // Disconnect from LiveKit
 async function disconnectFromLiveKit() {
-    if (!livekitRoom) return;
+    if (!livekitRoom) {
+        console.log('Already disconnected from LiveKit');
+        return;
+    }
     
     try {
-        await livekitRoom.disconnect();
-        livekitRoom = null;
+        const room = livekitRoom;
+        livekitRoom = null; // Prevent re-entry
+        
+        await room.disconnect();
+        
         isMicOn = false;
         isVideoOn = false;
         localAudioTrack = null;
@@ -898,9 +904,13 @@ function setupLiveKitListeners() {
     });
     
     // Disconnected
-    livekitRoom.on(LivekitClient.RoomEvent.Disconnected, () => {
-        console.log('Disconnected from room');
-        livekitRoom = null;
+    livekitRoom.on(LivekitClient.RoomEvent.Disconnected, (reason) => {
+        console.log('Disconnected from room, reason:', reason);
+        // Don't immediately null out the room - let the cleanup happen properly
+        if (reason !== 'CLIENT_INITIATED') {
+            console.warn('Unexpected disconnection:', reason);
+            showNotification('Connection lost, please refresh', 'error');
+        }
     });
     
     // Connection quality changed
