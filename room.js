@@ -1610,24 +1610,66 @@ function setupParticipantListeners(participant) {
     // Connection quality indicator removed
 }
 
-// Update speaking status visual indicator
+// Update speaking status visual indicator (works for all participants, visible to all users)
 function updateSpeakingStatus(identity, isSpeaking) {
-    const tile = document.querySelector(`[data-participant-id="${identity}"]`);
+    // Find participant in our participants array by matching identity
+    // LiveKit identity should match user_id
+    const participant = participants.find(p => 
+        p.user_id === identity || 
+        p.username === identity
+    );
+    
+    if (!participant) {
+        // Try to find by partial match (in case of formatting differences)
+        const partialMatch = participants.find(p => 
+            identity.includes(p.user_id) || 
+            p.user_id.includes(identity) ||
+            identity.includes(p.username) ||
+            p.username.includes(identity)
+        );
+        if (partialMatch) {
+            participant = partialMatch;
+        }
+    }
+    
+    if (!participant) {
+        // Participant not found yet, might be loading - try again later
+        setTimeout(() => {
+            updateSpeakingStatus(identity, isSpeaking);
+        }, 200);
+        return;
+    }
+    
+    // Find speaker tile
+    let tile = document.querySelector(`[data-participant-id="${participant.user_id}"]`);
+    
+    // If not found in speakers, check audience tiles
+    if (!tile) {
+        const audienceTiles = document.querySelectorAll('.audience-member');
+        audienceTiles.forEach(audienceTile => {
+            const nameElement = audienceTile.querySelector('.audience-member-name');
+            if (nameElement && nameElement.textContent === participant.username) {
+                tile = audienceTile;
+            }
+        });
+    }
+    
+    // Also check speaker tiles by name
+    if (!tile) {
+        const speakerTiles = document.querySelectorAll('.speaker-tile');
+        speakerTiles.forEach(speakerTile => {
+            const nameElement = speakerTile.querySelector('.speaker-name');
+            if (nameElement && nameElement.textContent === participant.username) {
+                tile = speakerTile;
+            }
+        });
+    }
+    
     if (tile) {
         if (isSpeaking) {
             tile.classList.add('speaking');
-            // Add speaking indicator to name
-            const nameLabel = tile.querySelector('.speaker-name');
-            if (nameLabel && !nameLabel.querySelector('.speaking-indicator')) {
-                const indicator = document.createElement('span');
-                indicator.className = 'speaking-indicator';
-                nameLabel.insertBefore(indicator, nameLabel.firstChild);
-            }
         } else {
             tile.classList.remove('speaking');
-            // Remove speaking indicator
-            const indicator = tile.querySelector('.speaking-indicator');
-            if (indicator) indicator.remove();
         }
     }
 }

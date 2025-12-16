@@ -222,7 +222,8 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.speaker-tile.speaking {
+.speaker-tile.speaking,
+.audience-member.speaking .audience-member-avatar {
     border-color: var(--accent-green);
     box-shadow: 0 0 0 3px var(--accent-green);
     animation: pulse-ring 1s ease-in-out infinite;
