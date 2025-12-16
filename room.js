@@ -54,15 +54,15 @@ if (!roomId) {
     window.location.href = 'index.html';
 }
 
-// Theme toggle functionality for room page
+// Theme toggle functionality for room page (uses same preference as home page)
 const themeToggleBtnRoom = document.getElementById('themeToggleBtnRoom');
 const themeIconRoom = themeToggleBtnRoom?.querySelector('.theme-icon-room');
 
-// Load saved theme or default to dark
-const savedThemeRoom = localStorage.getItem('roomTheme') || 'dark';
-document.documentElement.setAttribute('data-theme', savedThemeRoom);
+// Load saved theme or default to dark (use same key as home page)
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
 if (themeIconRoom) {
-    themeIconRoom.textContent = savedThemeRoom === 'dark' ? '☀️' : '🌙';
+    themeIconRoom.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 }
 
 // Toggle theme
@@ -72,7 +72,7 @@ if (themeToggleBtnRoom) {
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
         document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('roomTheme', newTheme);
+        localStorage.setItem('theme', newTheme); // Use same key as home page
         
         if (themeIconRoom) {
             themeIconRoom.textContent = newTheme === 'dark' ? '☀️' : '🌙';
