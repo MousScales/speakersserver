@@ -337,6 +337,32 @@ async function init() {
     subscribeToRooms();
 }
 
+// Theme toggle functionality
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = themeToggleBtn?.querySelector('.theme-icon');
+
+// Load saved theme or default to light
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+if (themeIcon) {
+    themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+}
+
+// Toggle theme
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        if (themeIcon) {
+            themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+    });
+}
+
 // Run initialization when page loads
 init();
 
