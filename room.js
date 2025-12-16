@@ -289,9 +289,8 @@ async function loadParticipants() {
         
         participants = data || [];
         
-        if (participantCount) {
-            participantCount.textContent = participants.length;
-        }
+        // Update counts immediately
+        updateAllCounts();
         
         updateParticipantsPanel();
         updateSpeakersList();
@@ -300,6 +299,26 @@ async function loadParticipants() {
     } catch (error) {
         console.error('Error loading participants:', error);
     }
+}
+
+// Update all counts (participants, audience, etc.)
+function updateAllCounts() {
+    // Update header participant count
+    if (participantCount) {
+        participantCount.textContent = participants.length;
+    }
+    
+    // Update panel counts
+    const allCount = document.getElementById('allCount');
+    const speakersCount = document.getElementById('speakersCount');
+    const raisedCount = document.getElementById('raisedCount');
+    
+    const speakers = participants.filter(p => p.is_speaking);
+    const raised = participants.filter(p => p.hand_raised);
+    
+    if (allCount) allCount.textContent = participants.length;
+    if (speakersCount) speakersCount.textContent = speakers.length;
+    if (raisedCount) raisedCount.textContent = raised.length;
 }
 
 // Update participants panel
@@ -758,6 +777,22 @@ window.toggleMuteParticipant = function(userId) {
     // Refresh panel to update button text
     loadParticipants();
 };
+
+// Update room active_participants count
+async function updateRoomParticipantCount() {
+    try {
+        const { error } = await supabase
+            .from('rooms')
+            .update({ active_participants: participants.length })
+            .eq('id', roomId);
+        
+        if (error) {
+            console.error('Error updating room participant count:', error);
+        }
+    } catch (error) {
+        console.error('Error updating room participant count:', error);
+    }
+}
 
 // Make moderator and kick functions removed - simplified interaction menu
 

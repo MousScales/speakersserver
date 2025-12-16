@@ -239,36 +239,50 @@ async function loadRooms() {
 
 // Subscribe to real-time changes
 function subscribeToRooms() {
-    const subscription = supabase
+    supabase
         .channel('rooms_channel')
-        .on('postgres_changes', 
-            { event: 'INSERT', schema: 'public', table: 'rooms' }, 
-            (payload) => {
-                console.log('New room added:', payload.new);
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'rooms'
+        }, (payload) => {
+            console.log('✅ New room added:', payload.new);
+            allRooms.unshift(payload.new);
+            displayRooms(currentCategory);
+        })
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'rooms'
+        }, (payload) => {
+            console.log('✅ Room updated:', payload.new);
+            const index = allRooms.findIndex(room => room.id === payload.new.id);
+            if (index !== -1) {
+                allRooms[index] = payload.new;
+                displayRooms(currentCategory);
+            } else {
+                // Room might be new, add it
                 allRooms.unshift(payload.new);
                 displayRooms(currentCategory);
             }
-        )
-        .on('postgres_changes', 
-            { event: 'UPDATE', schema: 'public', table: 'rooms' }, 
-            (payload) => {
-                console.log('Room updated:', payload.new);
-                const index = allRooms.findIndex(room => room.id === payload.new.id);
-                if (index !== -1) {
-                    allRooms[index] = payload.new;
-                    displayRooms(currentCategory);
-                }
+        })
+        .on('postgres_changes', {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'rooms'
+        }, (payload) => {
+            console.log('✅ Room deleted:', payload.old);
+            allRooms = allRooms.filter(room => room.id !== payload.old.id);
+            displayRooms(currentCategory);
+        })
+        .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ Subscribed to real-time room updates');
             }
-        )
-        .on('postgres_changes', 
-            { event: 'DELETE', schema: 'public', table: 'rooms' }, 
-            (payload) => {
-                console.log('Room deleted:', payload.old);
-                allRooms = allRooms.filter(room => room.id !== payload.old.id);
-                displayRooms(currentCategory);
+            if (status === 'CHANNEL_ERROR') {
+                console.error('❌ Room subscription error:', err);
             }
-        )
-        .subscribe();
+        });
 }
 
 // Initialize the app
