@@ -611,24 +611,46 @@ function showParticipantMenu(participant) {
     }
 }
 
-// Kick participant
+// Kick participant (remove from speaking, put back in audience)
 window.kickParticipant = async function(userId) {
-    if (!confirm('Are you sure you want to kick this participant?')) return;
+    if (!confirm('Are you sure you want to remove this participant from speaking?')) return;
     
     try {
+        // Update participant to remove speaking status and reset role to participant
         const { error } = await supabase
             .from('room_participants')
-            .delete()
+            .update({ 
+                is_speaking: false,
+                role: 'participant',
+                hand_raised: false,
+                hand_raised_at: null
+            })
             .eq('room_id', roomId)
             .eq('user_id', userId);
         
         if (error) throw error;
         
-        showNotification('Participant removed', 'success');
+        // Disconnect them from LiveKit if connected
+        if (livekitRoom) {
+            const participant = livekitRoom.remoteParticipants.get(userId);
+            if (participant) {
+                // Unpublish their tracks
+                participant.trackPublications.forEach(publication => {
+                    if (publication.track) {
+                        participant.unpublishTrack(publication.track);
+                    }
+                });
+            }
+        }
+        
+        showNotification('Participant moved back to audience', 'success');
+        
+        // Reload participants to update UI
+        await loadParticipants();
         
     } catch (error) {
         console.error('Error kicking participant:', error);
-        showNotification('Failed to kick participant', 'error');
+        showNotification('Failed to remove participant from speaking', 'error');
     }
 };
 
