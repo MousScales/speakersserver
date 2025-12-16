@@ -101,8 +101,20 @@
     <!-- Supabase Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Config (contains Supabase credentials) -->
-    <!-- Use config.production.js in production, config.js for local development -->
-    <script src="config.js"></script>
+    <script>
+        // Automatically use production config if available, fallback to local config
+        const configScript = document.createElement('script');
+        configScript.src = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'config.js' 
+            : 'config.production.js';
+        configScript.onerror = function() {
+            // Fallback to config.js if production config not found
+            const fallback = document.createElement('script');
+            fallback.src = 'config.js';
+            document.head.appendChild(fallback);
+        };
+        document.head.appendChild(configScript);
+    </script>
     <!-- Main Application Script -->
     <script src="script.js"></script>
 </body>
