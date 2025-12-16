@@ -2,7 +2,6 @@
   "name": "speakers-server",
   "version": "1.0.0",
   "description": "Real-time discussion platform with video/audio chat, powered by LiveKit and Supabase",
-  "type": "module",
   "main": "index.html",
   "scripts": {
     "start": "node token-server.js",
@@ -17,7 +16,7 @@
     "nodemon": "^3.0.2"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   }
 }
 
