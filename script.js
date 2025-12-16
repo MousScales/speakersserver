@@ -48,8 +48,9 @@ function displayRooms(category = 'all') {
         return;
     }
     
-    filteredRooms.forEach(room => {
-        createRoomCard(room);
+    // Create cards with async participant loading
+    filteredRooms.forEach(async (room) => {
+        await createRoomCard(room);
     });
 }
 
@@ -193,20 +194,65 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Function to create a room card element
-function createRoomCard(room) {
+async function createRoomCard(room) {
     const roomCard = document.createElement('div');
     roomCard.className = 'room-card';
     roomCard.setAttribute('data-category', room.category);
     roomCard.setAttribute('data-id', room.id);
+    
+    // Fetch participants for this room
+    let participants = [];
+    try {
+        const { data, error } = await supabase
+            .from('room_participants')
+            .select('username')
+            .eq('room_id', room.id)
+            .limit(8); // Show max 8 profile pictures
+        
+        if (!error && data) {
+            participants = data;
+        }
+    } catch (error) {
+        console.error('Error fetching participants:', error);
+    }
+    
+    // Create participant avatars HTML
+    let avatarsHTML = '';
+    if (participants.length > 0) {
+        avatarsHTML = '<div class="room-participants-avatars">';
+        participants.forEach((participant, index) => {
+            const initial = participant.username.charAt(0).toUpperCase();
+            const offset = index * -8; // Overlap avatars
+            avatarsHTML += `
+                <div class="participant-avatar" style="z-index: ${10 - index}; transform: translateX(${offset}px);" title="${escapeHtml(participant.username)}">
+                    ${initial}
+                </div>
+            `;
+        });
+        if (room.active_participants > participants.length) {
+            const remaining = room.active_participants - participants.length;
+            avatarsHTML += `<div class="participant-avatar more" style="z-index: 1; transform: translateX(${participants.length * -8}px);">+${remaining}</div>`;
+        }
+        avatarsHTML += '</div>';
+    }
+    
     roomCard.innerHTML = `
-        <div class="room-header">
-            <h3>${escapeHtml(room.title)}</h3>
-            <span class="category ${room.category}">${capitalizeFirst(room.category)}</span>
+        <div class="room-card-inner">
+            <div class="room-header">
+                <div class="room-title-section">
+                    <h3>${escapeHtml(room.title)}</h3>
+                    <span class="category ${room.category}">${capitalizeFirst(room.category)}</span>
+                </div>
+            </div>
+            <p class="room-description">${escapeHtml(room.description)}</p>
+            <div class="room-footer">
+                ${avatarsHTML}
+                <div class="room-stats">
+                    <span class="participants-count">👥 ${room.active_participants} ${room.active_participants === 1 ? 'person' : 'people'}</span>
+                </div>
+            </div>
         </div>
-        <p class="room-description">${escapeHtml(room.description)}</p>
-        <div class="room-footer">
-            <span class="participants">👥 ${room.active_participants} active</span>
-        </div>
+        <div class="room-card-glow"></div>
     `;
     
     // Add click event to the room card
