@@ -339,6 +339,8 @@ function updateParticipantsPanel() {
         let handIcon = participant.hand_raised ? '<span class="hand-raised">✋</span>' : '';
         
         let actions = '';
+        
+        // Host/Moderator actions (invite, make mod, kick)
         if (canModerate && !isTargetHost) {
             if (!participant.is_speaking && currentRole === 'host') {
                 actions += `<button class="action-btn invite" onclick="inviteToSpeak('${participant.user_id}')">✓ Invite</button>`;
@@ -349,7 +351,7 @@ function updateParticipantsPanel() {
             actions += `<button class="action-btn remove" onclick="kickParticipant('${participant.user_id}')">✕ Kick</button>`;
         }
         
-        // Everyone can mute anyone (client-side only)
+        // EVERYONE can mute anyone (client-side only, user-specific)
         if (participant.user_id !== currentUserId) {
             const isMuted = mutedParticipants.has(participant.user_id);
             actions += `<button class="action-btn mute" onclick="toggleMuteParticipant('${participant.user_id}')">${isMuted ? '🔊 Unmute' : '🔇 Mute'}</button>`;
@@ -453,33 +455,45 @@ window.inviteToSpeak = async function(userId) {
     }
 };
 
-// Client-side mute/unmute (only for the person who clicks it)
+// Client-side mute/unmute (EVERYONE can do this, user-specific only)
 window.toggleMuteParticipant = function(userId) {
-    if (mutedParticipants.has(userId)) {
+    // Find the participant's identity from LiveKit
+    let participantIdentity = userId;
+    
+    // Try to find the participant in LiveKit room
+    if (livekitRoom) {
+        const participant = Array.from(livekitRoom.remoteParticipants.values())
+            .find(p => p.identity === userId || p.name === userId);
+        if (participant) {
+            participantIdentity = participant.identity;
+        }
+    }
+    
+    if (mutedParticipants.has(participantIdentity)) {
         // Unmute
-        mutedParticipants.delete(userId);
+        mutedParticipants.delete(participantIdentity);
         
-        // Find and unmute the audio element
-        const audioElement = document.querySelector(`audio[data-participant-id="${userId}"]`);
-        if (audioElement) {
+        // Find and unmute ALL audio elements for this participant
+        const audioElements = document.querySelectorAll(`audio[data-participant-id="${participantIdentity}"]`);
+        audioElements.forEach(audioElement => {
             audioElement.muted = false;
             audioElement.volume = 1.0;
-            console.log('🔊 Unmuted participant:', userId);
-        }
+        });
         
+        console.log('🔊 Unmuted participant:', participantIdentity, '(for you only)');
         showNotification('Participant unmuted (for you)', 'success');
     } else {
         // Mute
-        mutedParticipants.add(userId);
+        mutedParticipants.add(participantIdentity);
         
-        // Find and mute the audio element
-        const audioElement = document.querySelector(`audio[data-participant-id="${userId}"]`);
-        if (audioElement) {
+        // Find and mute ALL audio elements for this participant
+        const audioElements = document.querySelectorAll(`audio[data-participant-id="${participantIdentity}"]`);
+        audioElements.forEach(audioElement => {
             audioElement.muted = true;
             audioElement.volume = 0;
-            console.log('🔇 Muted participant:', userId);
-        }
+        });
         
+        console.log('🔇 Muted participant:', participantIdentity, '(for you only)');
         showNotification('Participant muted (for you)', 'success');
     }
     
