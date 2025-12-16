@@ -637,6 +637,17 @@ function subscribeToParticipants() {
                 return;
             }
             
+            // Check for hand raises (notify host/moderators)
+            if (payload.eventType === 'UPDATE' && 
+                payload.new.hand_raised && 
+                !payload.old.hand_raised &&
+                payload.new.user_id !== currentUserId &&
+                (currentRole === 'host' || currentRole === 'moderator')) {
+                
+                // Someone raised their hand
+                showHandRaiseNotification(payload.new.username);
+            }
+            
             // Check if current user's role changed
             if (payload.eventType === 'UPDATE' && payload.new.user_id === currentUserId) {
                 if (payload.new.role !== currentRole) {
@@ -1218,6 +1229,9 @@ function attachVideoTrack(track, participant) {
         const videoElement = document.createElement('video');
         videoElement.autoplay = true;
         videoElement.playsInline = true;
+        videoElement.style.width = '100%';
+        videoElement.style.height = '100%';
+        videoElement.style.objectFit = 'cover';
         
         const nameLabel = document.createElement('div');
         nameLabel.className = 'speaker-name';
@@ -1240,13 +1254,20 @@ function attachVideoTrack(track, participant) {
         
         // Setup listeners for this participant if not already done
         setupParticipantListeners(participant);
+        
+        console.log('📹 Created video tile for', participantName);
+    } else {
+        // Tile exists - just update the video element
+        console.log('📹 Updating existing tile for', participantName);
     }
     
     // Attach track to video element
     const videoElement = tile.querySelector('video');
-    track.attach(videoElement);
-    
-    console.log('✅ Video attached for', participantName);
+    if (videoElement) {
+        track.attach(videoElement);
+        videoElement.style.display = 'block'; // Make sure video is visible
+        console.log('✅ Video attached for', participantName);
+    }
 }
 
 // Attach audio track to DOM
@@ -1339,6 +1360,9 @@ function showNotification(message, type = 'success') {
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         z-index: 2000;
         animation: slideIn 0.3s ease;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        max-width: 300px;
     `;
     notification.textContent = message;
     
@@ -1347,7 +1371,95 @@ function showNotification(message, type = 'success') {
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
         }, 300);
     }, 3000);
+}
+
+// Show hand raise notification with special styling
+function showHandRaiseNotification(username) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+        z-index: 2000;
+        animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 15px;
+        max-width: 320px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    `;
+    
+    notification.innerHTML = `
+        <span style="font-size: 32px; animation: wave 0.6s ease-in-out infinite;">✋</span>
+        <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(username)} raised their hand</div>
+            <div style="font-size: 12px; opacity: 0.9;">Click to invite them to speak</div>
+        </div>
+    `;
+    
+    // Make clickable to open participants panel
+    notification.style.cursor = 'pointer';
+    notification.addEventListener('click', () => {
+        participantsPanel.style.display = 'flex';
+        // Switch to "Raised Hands" tab
+        document.querySelectorAll('.panel-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-tab') === 'raised') {
+                tab.classList.add('active');
+            }
+        });
+        currentTab = 'raised';
+        updateParticipantsPanel();
+        notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    // Play notification sound (optional)
+    playNotificationSound();
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 5000); // Show for 5 seconds
+}
+
+// Play a subtle notification sound
+function playNotificationSound() {
+    // Create a simple beep using Web Audio API
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+        // Silently fail if audio context not available
+        console.log('Audio notification not available');
+    }
 }
