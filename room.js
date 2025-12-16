@@ -1777,9 +1777,13 @@ function updateSpeakingStatus(identity, isSpeaking) {
     if (tile) {
         if (isSpeaking) {
             tile.classList.add('speaking');
+            console.log('✅ Speaking indicator added for', participant.username, 'tile:', tile.className);
         } else {
             tile.classList.remove('speaking');
+            console.log('🔇 Speaking indicator removed for', participant.username);
         }
+    } else {
+        console.warn('⚠️ Tile not found for participant:', participant.username, 'identity:', identity, 'user_id:', participant.user_id);
     }
 }
 
