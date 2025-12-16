@@ -1035,6 +1035,15 @@ function subscribeToParticipants() {
                 if (payload.new.is_speaking && currentRole === 'speaker') {
                     updateUIForRole();
                 }
+                
+                // If hand was lowered (invited to speak), update local state and button
+                if (!payload.new.hand_raised && handRaised) {
+                    handRaised = false;
+                    if (raiseHandBtn) {
+                        raiseHandBtn.classList.remove('raised');
+                        raiseHandBtn.innerHTML = '<span>✋</span> Raise Hand';
+                    }
+                }
             }
             
             // If someone left, check if room should be deleted
