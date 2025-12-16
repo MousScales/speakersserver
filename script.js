@@ -49,9 +49,9 @@ function displayRooms(category = 'all') {
     }
     
     // Create cards with async participant loading
-    filteredRooms.forEach(async (room) => {
+    for (const room of filteredRooms) {
         await createRoomCard(room);
-    });
+    }
 }
 
 // Open modal
