@@ -542,9 +542,9 @@ function updateParticipantsPanel() {
             actions = '';
         }
         
-        // Make item clickable if hand is raised and user is host/moderator
+        // Make item clickable if hand is raised and user is host/moderator (only for logged-in users)
         let clickable = false;
-        if (participant.hand_raised && !participant.is_speaking && canModerate && !isTargetHost) {
+        if (participant.hand_raised && !participant.is_speaking && canModerate && !isTargetHost && !participant.user_id.startsWith('anonymous_')) {
             clickable = true;
             item.style.cursor = 'pointer';
             item.style.backgroundColor = '#fef3c7';
