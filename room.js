@@ -1040,8 +1040,14 @@ function subscribeToParticipants() {
             // If someone left, check if room should be deleted
             if (payload.eventType === 'DELETE') {
                 await checkRoomStatus();
+                
+                // Also remove their LiveKit tiles if they disconnected
+                const leftParticipantId = payload.old.user_id;
+                removeVideoTile(leftParticipantId);
+                detachAudioTrack(leftParticipantId);
             }
             
+            // Always reload participants to update UI
             await loadParticipants();
         })
         .subscribe();
@@ -1410,9 +1416,18 @@ function setupLiveKitListeners() {
     });
     
     // Participant disconnected
-    livekitRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, (participant) => {
+    livekitRoom.on(LivekitClient.RoomEvent.ParticipantDisconnected, async (participant) => {
         console.log('Participant disconnected:', participant.identity);
+        
+        // Remove video tile immediately
         removeVideoTile(participant.identity);
+        
+        // Remove audio track
+        detachAudioTrack(participant.identity);
+        
+        // Reload participants to update UI (removes from speakers/audience lists)
+        // The database should be updated by the leaveRoom function, but refresh to be sure
+        await loadParticipants();
     });
     
     // Track subscribed
