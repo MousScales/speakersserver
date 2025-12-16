@@ -1,6 +1,9 @@
-# Credentials (IMPORTANT: Keep private!)
+# Local development credentials (IMPORTANT: Keep private!)
 config.js
 token-server.js
+
+# Production config is safe to commit (uses serverless function)
+!config.production.js
 
 # Node modules
 node_modules/

@@ -17,6 +17,19 @@ A modern, real-time discussion platform with audio/video chat, powered by LiveKi
 
 ## 🚀 Quick Start
 
+### Deployment Options
+
+**Option 1: Deploy to Vercel (Recommended)**
+- ✅ Zero configuration
+- ✅ Serverless functions
+- ✅ Automatic HTTPS
+- ✅ Global CDN
+- ✅ Free tier available
+
+👉 **[See Vercel Deployment Guide](VERCEL_DEPLOYMENT.md)**
+
+**Option 2: Local Development**
+
 ### Prerequisites
 
 - Node.js (v16 or higher)
