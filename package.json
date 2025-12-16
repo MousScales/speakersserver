@@ -2,19 +2,17 @@
   "name": "speakers-server",
   "version": "1.0.0",
   "description": "Real-time discussion platform with video/audio chat, powered by LiveKit and Supabase",
-  "main": "token-server.js",
-  "type": "module",
+  "main": "index.html",
   "scripts": {
     "start": "node token-server.js",
-    "dev": "nodemon token-server.js",
-    "vercel-build": "echo 'Build complete'"
+    "dev": "nodemon token-server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
     "livekit-server-sdk": "^2.0.0"
   },
   "devDependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
     "nodemon": "^3.0.2"
   },
   "engines": {
