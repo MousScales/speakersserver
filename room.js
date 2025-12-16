@@ -72,6 +72,10 @@ if (!roomId) {
             // Hide modal and rejoin automatically
             usernameModal.style.display = 'none';
             
+            // Hide placeholder immediately
+            if (videoPlaceholder) videoPlaceholder.style.display = 'none';
+            if (speakersContainer) speakersContainer.style.display = 'grid';
+            
             // Verify participant still exists in database
             const { data: existingParticipant } = await supabase
                 .from('room_participants')
@@ -131,6 +135,10 @@ usernameForm.addEventListener('submit', async (e) => {
     
     // Close modal
     usernameModal.style.display = 'none';
+    
+    // Hide placeholder immediately
+    if (videoPlaceholder) videoPlaceholder.style.display = 'none';
+    if (speakersContainer) speakersContainer.style.display = 'grid';
     
     // Load room data
     await loadRoom();
@@ -353,11 +361,8 @@ function updateParticipantsPanel() {
         
         let actions = '';
         
-        // Host/Moderator actions (invite, make mod, kick)
+        // Host/Moderator actions (make mod, kick) - NO invite button
         if (canModerate && !isTargetHost) {
-            if (!participant.is_speaking && currentRole === 'host') {
-                actions += `<button class="action-btn invite" onclick="inviteToSpeak('${participant.user_id}')">✓ Invite</button>`;
-            }
             if (currentRole === 'host' && participant.role === 'speaker') {
                 actions += `<button class="action-btn" onclick="makeModeratorFunc('${participant.user_id}')">👑 Mod</button>`;
             }
@@ -375,6 +380,19 @@ function updateParticipantsPanel() {
             actions = '';
         }
         
+        // Make item clickable if hand is raised and user is host/moderator
+        let clickable = false;
+        if (participant.hand_raised && !participant.is_speaking && canModerate && !isTargetHost) {
+            clickable = true;
+            item.style.cursor = 'pointer';
+            item.style.backgroundColor = '#fef3c7';
+            item.addEventListener('click', (e) => {
+                // Don't trigger if clicking on action buttons
+                if (e.target.closest('.participant-actions')) return;
+                inviteToSpeak(participant.user_id);
+            });
+        }
+        
         item.setAttribute('data-user-id', participant.user_id);
         item.innerHTML = `
             <div class="participant-avatar">${initial}</div>
@@ -383,6 +401,7 @@ function updateParticipantsPanel() {
                     ${escapeHtml(participant.username)}${isMe ? ' (You)' : ''}
                     ${roleBadge}
                     ${handIcon}
+                    ${clickable ? '<span style="color: #92400e; font-size: 0.75rem; margin-left: 8px;">(Click to invite)</span>' : ''}
                 </div>
             </div>
             <div class="participant-actions">
