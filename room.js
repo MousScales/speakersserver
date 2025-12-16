@@ -668,13 +668,6 @@ window.toggleMuteParticipant = function(userId) {
 };
 
 // Make moderator and kick functions removed - simplified interaction menu
-        
-        showNotification('Participant removed', 'success');
-        
-    } catch (error) {
-        console.error('Error kicking participant:', error);
-    }
-};
 
 // Send message
 async function sendMessage() {
