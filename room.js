@@ -500,8 +500,14 @@ function scrollToBottom() {
 function subscribeToChat() {
     loadMessages();
     
-    supabase
-        .channel('chat_channel_' + roomId)
+    const chatChannel = supabase.channel('chat_channel_' + roomId, {
+        config: {
+            broadcast: { self: true },
+            presence: { key: currentUserId }
+        }
+    });
+    
+    chatChannel
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
@@ -512,9 +518,17 @@ function subscribeToChat() {
             displayMessage(payload.new);
             scrollToBottom();
         })
-        .subscribe((status) => {
+        .subscribe((status, err) => {
+            console.log('Chat subscription status:', status);
             if (status === 'SUBSCRIBED') {
-                console.log('✅ Subscribed to real-time chat');
+                console.log('✅ Successfully subscribed to real-time chat');
+            }
+            if (status === 'CHANNEL_ERROR') {
+                console.error('❌ Chat subscription error:', err);
+                console.error('Real-time may not be enabled. Run SUPABASE_REALTIME_FIX.sql');
+            }
+            if (status === 'TIMED_OUT') {
+                console.error('❌ Chat subscription timed out');
             }
         });
 }
@@ -528,7 +542,7 @@ function subscribeToParticipants() {
             schema: 'public',
             table: 'room_participants',
             filter: `room_id=eq.${roomId}`
-        }, (payload) => {
+        }, async (payload) => {
             // Check if current user was kicked
             if (payload.eventType === 'DELETE' && payload.old.user_id === currentUserId) {
                 alert('You have been removed from the room');
@@ -547,9 +561,47 @@ function subscribeToParticipants() {
                 }
             }
             
+            // If someone left, check if room should be deleted
+            if (payload.eventType === 'DELETE') {
+                await checkRoomStatus();
+            }
+            
             loadParticipants();
         })
         .subscribe();
+}
+
+// Check room status (for cleanup)
+async function checkRoomStatus() {
+    try {
+        const { data: remainingParticipants, error } = await supabase
+            .from('room_participants')
+            .select('id')
+            .eq('room_id', roomId);
+        
+        if (error) throw error;
+        
+        // If room is empty and we're somehow still here, redirect home
+        if (!remainingParticipants || remainingParticipants.length === 0) {
+            console.log('Room is empty, cleaning up...');
+            
+            // Delete the room
+            await supabase
+                .from('chat_messages')
+                .delete()
+                .eq('room_id', roomId);
+            
+            await supabase
+                .from('rooms')
+                .delete()
+                .eq('id', roomId);
+            
+            console.log('✅ Room deleted (cleanup)');
+        }
+        
+    } catch (error) {
+        console.error('Error checking room status:', error);
+    }
 }
 
 // Leave room
@@ -752,6 +804,21 @@ async function connectToLiveKit() {
         await livekitRoom.connect(LIVEKIT_URL, token);
         
         console.log('✅ Connected to LiveKit room');
+        console.log('Local participant:', livekitRoom.localParticipant.identity);
+        console.log('Remote participants:', Array.from(livekitRoom.remoteParticipants.keys()));
+        
+        // Log all remote participants and their tracks
+        livekitRoom.remoteParticipants.forEach((participant, identity) => {
+            console.log(`Remote participant ${identity}:`, {
+                name: participant.name,
+                trackCount: participant.trackPublications.size,
+                tracks: Array.from(participant.trackPublications.values()).map(pub => ({
+                    kind: pub.kind,
+                    subscribed: pub.isSubscribed,
+                    enabled: pub.track !== undefined
+                }))
+            });
+        });
         
         // Auto-enable mic for host
         if (currentRole === 'host') {
