@@ -766,7 +766,7 @@ window.addEventListener('beforeunload', async (e) => {
 // ========== LiveKit Functions ==========
 
 // Connect to LiveKit
-async function connectToLiveKit() {
+async function connectToLiveKit(canPublish = true) {
     if (livekitRoom) {
         console.log('Already connected to LiveKit');
         return;
@@ -786,6 +786,7 @@ async function connectToLiveKit() {
         const token = String(tokenData.token);
         
         console.log('✅ Got LiveKit token:', token.substring(0, 20) + '...');
+        console.log('Can publish:', canPublish);
         
         if (!token || token === 'undefined' || token === '[object Object]') {
             throw new Error('Invalid token received from server');
@@ -795,15 +796,17 @@ async function connectToLiveKit() {
         livekitRoom = new LivekitClient.Room({
             adaptiveStream: true,
             dynacast: true,
+            // Automatically subscribe to all tracks
+            autoSubscribe: true,
         });
         
-        // Set up event listeners
+        // Set up event listeners BEFORE connecting
         setupLiveKitListeners();
         
         // Connect to room with proper string token
         await livekitRoom.connect(LIVEKIT_URL, token);
         
-        console.log('✅ Connected to LiveKit room');
+        console.log('✅ Connected to LiveKit room as', canPublish ? 'SPEAKER' : 'VIEWER');
         console.log('Local participant:', livekitRoom.localParticipant.identity);
         console.log('Remote participants:', Array.from(livekitRoom.remoteParticipants.keys()));
         
@@ -820,10 +823,12 @@ async function connectToLiveKit() {
             });
         });
         
-        // Auto-enable mic for host
-        if (currentRole === 'host') {
-            await toggleMic();
+        // Auto-enable mic for host only
+        if (currentRole === 'host' && canPublish) {
+            setTimeout(() => toggleMic(), 1000); // Small delay to ensure connection is stable
         }
+        
+        showNotification(canPublish ? 'Connected to voice chat' : 'Watching room', 'success');
         
     } catch (error) {
         console.error('Error connecting to LiveKit:', error);
@@ -1002,6 +1007,12 @@ async function toggleMic() {
         return;
     }
     
+    // Check if user has permission to publish
+    if (currentRole === 'participant') {
+        showNotification('Raise your hand to speak', 'error');
+        return;
+    }
+    
     try {
         if (!isMicOn) {
             // Enable microphone
@@ -1033,6 +1044,12 @@ async function toggleMic() {
 async function toggleVideo() {
     if (!livekitRoom) {
         showNotification('Not connected to audio/video', 'error');
+        return;
+    }
+    
+    // Check if user has permission to publish
+    if (currentRole === 'participant') {
+        showNotification('Raise your hand to speak', 'error');
         return;
     }
     
