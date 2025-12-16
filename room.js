@@ -41,6 +41,9 @@ let isVideoOn = false;
 let localAudioTrack = null;
 let localVideoTrack = null;
 
+// Client-side muted participants (Set of user IDs)
+let mutedParticipants = new Set();
+
 // Check if room ID exists
 if (!roomId) {
     alert('No room ID provided!');
@@ -335,13 +338,16 @@ function updateParticipantsPanel() {
             if (!participant.is_speaking && currentRole === 'host') {
                 actions += `<button class="action-btn invite" onclick="inviteToSpeak('${participant.user_id}')">✓ Invite</button>`;
             }
-            if (participant.is_speaking) {
-                actions += `<button class="action-btn" onclick="removeFromSpeakers('${participant.user_id}')">🔇 Mute</button>`;
-            }
             if (currentRole === 'host' && participant.role === 'speaker') {
                 actions += `<button class="action-btn" onclick="makeModeratorFunc('${participant.user_id}')">👑 Mod</button>`;
             }
             actions += `<button class="action-btn remove" onclick="kickParticipant('${participant.user_id}')">✕ Kick</button>`;
+        }
+        
+        // Everyone can mute anyone (client-side only)
+        if (participant.user_id !== currentUserId) {
+            const isMuted = mutedParticipants.has(participant.user_id);
+            actions += `<button class="action-btn mute" onclick="toggleMuteParticipant('${participant.user_id}')">${isMuted ? '🔊 Unmute' : '🔇 Mute'}</button>`;
         }
         
         // Moderators can't kick/mute host
@@ -1321,14 +1327,15 @@ function attachAudioTrack(track, participant) {
         audioElement.playsInline = true;
         audioElement.setAttribute('data-participant-id', identity);
         
-        // CRITICAL: Ensure audio is not muted
-        audioElement.muted = false;
-        audioElement.volume = 1.0;
+        // Check if this participant is muted by the current user
+        const isMuted = mutedParticipants.has(identity);
+        audioElement.muted = isMuted;
+        audioElement.volume = isMuted ? 0 : 1.0;
         
         // Add to DOM (hidden)
         document.body.appendChild(audioElement);
         
-        console.log('🔊 Created audio element for', participantName);
+        console.log('🔊 Created audio element for', participantName, isMuted ? '(muted)' : '');
     }
     
     // Attach track to audio element
