@@ -555,17 +555,87 @@ function subscribeToParticipants() {
 // Leave room
 async function leaveRoom() {
     try {
+        // Disconnect from LiveKit first
+        if (livekitRoom) {
+            await disconnectFromLiveKit();
+        }
+        
+        // Remove participant from database
         await supabase
             .from('room_participants')
             .delete()
             .eq('room_id', roomId)
             .eq('user_id', currentUserId);
         
+        // Check if room should be deleted
+        await checkAndDeleteRoom();
+        
         window.location.href = 'index.html';
         
     } catch (error) {
         console.error('Error leaving room:', error);
         window.location.href = 'index.html';
+    }
+}
+
+// Check if room should be deleted (empty or host left)
+async function checkAndDeleteRoom() {
+    try {
+        // If the leaving user is the host, delete the room immediately
+        if (currentRole === 'host') {
+            console.log('Host leaving, deleting room...');
+            
+            // Delete all participants first
+            await supabase
+                .from('room_participants')
+                .delete()
+                .eq('room_id', roomId);
+            
+            // Delete all chat messages
+            await supabase
+                .from('chat_messages')
+                .delete()
+                .eq('room_id', roomId);
+            
+            // Delete the room
+            await supabase
+                .from('rooms')
+                .delete()
+                .eq('id', roomId);
+            
+            console.log('✅ Room deleted (host left)');
+            return;
+        }
+        
+        // Check remaining participants
+        const { data: remainingParticipants, error } = await supabase
+            .from('room_participants')
+            .select('id')
+            .eq('room_id', roomId);
+        
+        if (error) throw error;
+        
+        // If room is empty, delete it
+        if (!remainingParticipants || remainingParticipants.length === 0) {
+            console.log('Room is empty, deleting...');
+            
+            // Delete all chat messages
+            await supabase
+                .from('chat_messages')
+                .delete()
+                .eq('room_id', roomId);
+            
+            // Delete the room
+            await supabase
+                .from('rooms')
+                .delete()
+                .eq('id', roomId);
+            
+            console.log('✅ Room deleted (empty)');
+        }
+        
+    } catch (error) {
+        console.error('Error checking/deleting room:', error);
     }
 }
 
@@ -615,15 +685,29 @@ document.querySelectorAll('.panel-tab').forEach(tab => {
 });
 
 // Leave room when window closes
-window.addEventListener('beforeunload', async () => {
+window.addEventListener('beforeunload', async (e) => {
     if (livekitRoom) {
-        await livekitRoom.disconnect();
+        livekitRoom.disconnect();
     }
-    if (currentUserId) {
+    
+    if (currentUserId && roomId) {
+        // Use sendBeacon for reliable cleanup on page unload
+        const supabaseUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : supabase.supabaseUrl;
+        const supabaseKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : supabase.supabaseKey;
+        
+        // Delete participant
         navigator.sendBeacon(
-            `${supabase.supabaseUrl}/rest/v1/room_participants?room_id=eq.${roomId}&user_id=eq.${currentUserId}`,
-            JSON.stringify({})
+            `${supabaseUrl}/rest/v1/room_participants?room_id=eq.${roomId}&user_id=eq.${currentUserId}`,
+            new Blob([JSON.stringify({})], { type: 'application/json' })
         );
+        
+        // If host, try to delete room (may not complete if page closes quickly)
+        if (currentRole === 'host') {
+            navigator.sendBeacon(
+                `${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}`,
+                new Blob([JSON.stringify({})], { type: 'application/json' })
+            );
+        }
     }
 });
 
