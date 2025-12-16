@@ -234,7 +234,7 @@ async function updateUIForRole() {
         raiseHandBtn.style.display = 'flex';
         micBtn.style.display = 'none';
         videoBtn.style.display = 'none';
-        screenShareBtn.style.display = 'none';
+        if (screenShareBtn) screenShareBtn.style.display = 'none';
         
         // Show video area so they can watch speakers
         videoPlaceholder.style.display = 'none';
@@ -257,7 +257,7 @@ async function updateUIForRole() {
         
         micBtn.style.display = 'flex';
         videoBtn.style.display = 'flex';
-        screenShareBtn.style.display = 'flex';
+        if (screenShareBtn) screenShareBtn.style.display = 'flex';
         
         if (currentRole === 'moderator' || currentRole === 'host') {
             participantsBtn.style.display = 'flex';
@@ -855,10 +855,12 @@ videoBtn.addEventListener('click', async () => {
     await toggleVideo();
 });
 
-// Screen share button
-screenShareBtn.addEventListener('click', async () => {
-    await toggleScreenShare();
-});
+// Screen share button (if exists)
+if (screenShareBtn) {
+    screenShareBtn.addEventListener('click', async () => {
+        await toggleScreenShare();
+    });
+}
 
 // Panel tabs
 document.querySelectorAll('.panel-tab').forEach(tab => {
@@ -1036,18 +1038,34 @@ function setupLiveKitListeners() {
     
     // Track unsubscribed
     livekitRoom.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-        console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
+        console.log('Track unsubscribed:', track.kind, 'from', participant.identity, 'source:', publication.source);
         
         if (track.kind === LivekitClient.Track.Kind.Video) {
-            // Remove video but keep the tile with placeholder
-            const tile = document.querySelector(`[data-participant-id="${participant.identity}"]`);
-            if (tile) {
-                tile.classList.remove('has-video');
-                const videoElement = tile.querySelector('video');
-                if (videoElement) {
-                    track.detach(videoElement);
+            if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                // Remove screen share tile
+                const screenShareId = `${participant.identity}_screen`;
+                const tile = document.querySelector(`[data-participant-id="${screenShareId}"]`);
+                if (tile) {
+                    tile.remove();
+                    updateGridLayout();
                 }
-                console.log('📹 Video removed, showing placeholder for', participant.identity);
+            } else {
+                // Remove video but keep the tile with placeholder
+                const tile = document.querySelector(`[data-participant-id="${participant.identity}"]`);
+                if (tile) {
+                    tile.classList.remove('has-video');
+                    const videoElement = tile.querySelector('video');
+                    if (videoElement) {
+                        track.detach(videoElement);
+                        videoElement.style.display = 'none';
+                    }
+                    // Show placeholder again
+                    const placeholder = tile.querySelector('.video-placeholder');
+                    if (placeholder) {
+                        placeholder.style.display = 'flex';
+                    }
+                    console.log('📹 Video removed, showing placeholder for', participant.identity);
+                }
             }
         } else if (track.kind === LivekitClient.Track.Kind.Audio) {
             detachAudioTrack(participant.identity);
@@ -1225,6 +1243,11 @@ async function toggleScreenShare() {
         return;
     }
     
+    if (!screenShareBtn) {
+        console.error('Screen share button not found');
+        return;
+    }
+    
     try {
         if (!isScreenSharing) {
             // Start screen sharing
@@ -1253,8 +1276,10 @@ async function toggleScreenShare() {
             showNotification('Failed to toggle screen share', 'error');
         }
         isScreenSharing = false;
-        screenShareBtn.classList.remove('active');
-        screenShareBtn.querySelector('span').textContent = '🖥️';
+        if (screenShareBtn) {
+            screenShareBtn.classList.remove('active');
+            screenShareBtn.querySelector('span').textContent = '🖥️';
+        }
     }
 }
 
@@ -1358,10 +1383,17 @@ function attachVideoTrack(track, participant) {
     // Mark tile as having video
     tile.classList.add('has-video');
     
+    // Hide placeholder when video is active
+    const placeholder = tile.querySelector('.video-placeholder');
+    if (placeholder) {
+        placeholder.style.display = 'none';
+    }
+    
     // Attach track to video element
     const videoElement = tile.querySelector('video');
     if (videoElement) {
         track.attach(videoElement);
+        videoElement.style.display = 'block';
         console.log('✅ Video attached for', participantName);
     }
     
@@ -1375,18 +1407,25 @@ function createParticipantTile(identity, participantName) {
     tile.className = 'speaker-tile';
     tile.setAttribute('data-participant-id', identity);
     
-    // Video element (hidden by default)
+    // Video element (hidden by default, shown when video track is attached)
     const videoElement = document.createElement('video');
     videoElement.autoplay = true;
     videoElement.playsInline = true;
+    videoElement.style.display = 'none'; // Hidden until video is attached
+    videoElement.style.width = '100%';
+    videoElement.style.height = '100%';
+    videoElement.style.objectFit = 'cover';
     
     // Placeholder (shown when no video)
     const placeholder = document.createElement('div');
     placeholder.className = 'video-placeholder';
+    placeholder.style.display = 'flex'; // Show by default
     
     const avatar = document.createElement('div');
     avatar.className = 'avatar';
-    avatar.textContent = participantName.charAt(0).toUpperCase();
+    // Get first letter of username (handle cases where name might be user ID)
+    const firstLetter = participantName.split('_')[0].charAt(0).toUpperCase() || '?';
+    avatar.textContent = firstLetter;
     
     const statusText = document.createElement('div');
     statusText.className = 'status-text';

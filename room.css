@@ -305,58 +305,118 @@
 }
 
 .speakers-container {
-    display: grid;
-    gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     width: 100%;
-    align-content: start;
+    height: 100%;
+    padding: 8px;
+    align-content: flex-start;
+    justify-content: center;
 }
 
-/* Dynamic grid - Zoom/Discord style */
-.speakers-container[data-count="1"] {
-    grid-template-columns: 1fr;
+/* Discord-style dynamic sizing */
+
+/* 1 person - full screen */
+.speakers-container[data-count="1"] .speaker-tile {
+    width: 100%;
+    height: calc(100vh - 120px);
+    flex: 1 1 100%;
 }
 
-.speakers-container[data-count="2"] {
-    grid-template-columns: repeat(2, 1fr);
+/* 2 people - split 50/50 */
+.speakers-container[data-count="2"] .speaker-tile {
+    width: calc(50% - 4px);
+    height: calc(100vh - 120px);
+    flex: 1 1 calc(50% - 4px);
 }
 
-.speakers-container[data-count="3"],
-.speakers-container[data-count="4"] {
-    grid-template-columns: repeat(2, 1fr);
+/* 3-4 people - 2x2 grid */
+.speakers-container[data-count="3"] .speaker-tile,
+.speakers-container[data-count="4"] .speaker-tile {
+    width: calc(50% - 4px);
+    height: calc(50vh - 60px);
+    flex: 0 1 calc(50% - 4px);
 }
 
-.speakers-container[data-count="5"],
-.speakers-container[data-count="6"] {
-    grid-template-columns: repeat(3, 1fr);
+/* 5-6 people - 2x3 or 3x2 */
+.speakers-container[data-count="5"] .speaker-tile,
+.speakers-container[data-count="6"] .speaker-tile {
+    width: calc(33.333% - 6px);
+    height: calc(50vh - 60px);
+    flex: 0 1 calc(33.333% - 6px);
 }
 
-.speakers-container[data-count="7"],
-.speakers-container[data-count="8"],
-.speakers-container[data-count="9"] {
-    grid-template-columns: repeat(3, 1fr);
+/* 7-9 people - 3x3 grid */
+.speakers-container[data-count="7"] .speaker-tile,
+.speakers-container[data-count="8"] .speaker-tile,
+.speakers-container[data-count="9"] .speaker-tile {
+    width: calc(33.333% - 6px);
+    height: calc(33.333vh - 50px);
+    flex: 0 1 calc(33.333% - 6px);
 }
 
-/* 10+ participants */
-.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]) {
-    grid-template-columns: repeat(4, 1fr);
+/* 10-12 people - 4x3 grid */
+.speakers-container[data-count="10"] .speaker-tile,
+.speakers-container[data-count="11"] .speaker-tile,
+.speakers-container[data-count="12"] .speaker-tile {
+    width: calc(25% - 6px);
+    height: calc(33.333vh - 50px);
+    flex: 0 1 calc(25% - 6px);
 }
 
+/* 13-16 people - 4x4 grid */
+.speakers-container[data-count="13"] .speaker-tile,
+.speakers-container[data-count="14"] .speaker-tile,
+.speakers-container[data-count="15"] .speaker-tile,
+.speakers-container[data-count="16"] .speaker-tile {
+    width: calc(25% - 6px);
+    height: calc(25vh - 40px);
+    flex: 0 1 calc(25% - 6px);
+}
+
+/* 17+ people - compact 5 column grid */
+.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]):not([data-count="10"]):not([data-count="11"]):not([data-count="12"]):not([data-count="13"]):not([data-count="14"]):not([data-count="15"]):not([data-count="16"]) .speaker-tile {
+    width: calc(20% - 6px);
+    height: 180px;
+    flex: 0 1 calc(20% - 6px);
+}
+
+/* Responsive - tablets */
 @media (max-width: 1200px) {
-    .speakers-container:not([data-count="1"]) {
-        grid-template-columns: repeat(2, 1fr) !important;
+    .speakers-container[data-count="1"] .speaker-tile {
+        height: calc(100vh - 140px);
+    }
+    
+    .speakers-container[data-count="2"] .speaker-tile {
+        height: calc(100vh - 140px);
+    }
+    
+    .speakers-container[data-count="3"] .speaker-tile,
+    .speakers-container[data-count="4"] .speaker-tile,
+    .speakers-container[data-count="5"] .speaker-tile,
+    .speakers-container[data-count="6"] .speaker-tile {
+        width: calc(50% - 4px);
+        flex: 0 1 calc(50% - 4px);
     }
 }
 
+/* Responsive - mobile */
 @media (max-width: 768px) {
-    .speakers-container {
-        grid-template-columns: 1fr !important;
+    .speakers-container[data-count="1"] .speaker-tile {
+        height: calc(100vh - 160px);
+    }
+    
+    .speakers-container:not([data-count="1"]) .speaker-tile {
+        width: 100% !important;
+        height: 250px !important;
+        flex: 1 1 100% !important;
     }
 }
 
 .speaker-tile {
     background: #1e293b;
     border-radius: 8px;
-    aspect-ratio: 16/9;
     position: relative;
     display: flex;
     align-items: center;
@@ -364,32 +424,8 @@
     color: white;
     overflow: hidden;
     border: 3px solid transparent;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
     min-height: 150px;
-}
-
-/* Adaptive sizing based on count */
-.speakers-container[data-count="1"] .speaker-tile {
-    max-height: 80vh;
-}
-
-.speakers-container[data-count="2"] .speaker-tile,
-.speakers-container[data-count="3"] .speaker-tile,
-.speakers-container[data-count="4"] .speaker-tile {
-    max-height: 50vh;
-}
-
-.speakers-container[data-count="5"] .speaker-tile,
-.speakers-container[data-count="6"] .speaker-tile,
-.speakers-container[data-count="7"] .speaker-tile,
-.speakers-container[data-count="8"] .speaker-tile,
-.speakers-container[data-count="9"] .speaker-tile {
-    max-height: 35vh;
-}
-
-.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]) .speaker-tile {
-    aspect-ratio: 4/3;
-    max-height: 25vh;
 }
 
 .speaker-tile.speaking {
@@ -400,18 +436,28 @@
 
 /* Screen share tiles - larger and more prominent */
 .speaker-tile.screen-share-tile {
-    grid-column: span 2;
     background: #000;
     border-color: #667eea;
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    height: calc(70vh - 80px) !important;
 }
 
 .speaker-tile.screen-share-tile video {
     object-fit: contain !important;
 }
 
+/* When screen share is active, make other tiles smaller */
+.speakers-container:has(.screen-share-tile) .speaker-tile:not(.screen-share-tile) {
+    width: calc(25% - 6px) !important;
+    height: 180px !important;
+    flex: 0 1 calc(25% - 6px) !important;
+}
+
 @media (max-width: 768px) {
-    .speaker-tile.screen-share-tile {
-        grid-column: span 1;
+    .speakers-container:has(.screen-share-tile) .speaker-tile:not(.screen-share-tile) {
+        width: calc(50% - 4px) !important;
+        flex: 0 1 calc(50% - 4px) !important;
     }
 }
 
@@ -471,25 +517,36 @@
     display: none;
 }
 
-/* Adaptive avatar sizes */
-.speakers-container[data-count="1"] .speaker-tile .video-placeholder .avatar {
+/* Adaptive avatar sizes based on tile size */
+.speakers-container[data-count="1"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="2"] .speaker-tile .video-placeholder .avatar {
     width: 120px;
     height: 120px;
     font-size: 54px;
 }
 
-.speakers-container[data-count="2"] .speaker-tile .video-placeholder .avatar,
 .speakers-container[data-count="3"] .speaker-tile .video-placeholder .avatar,
-.speakers-container[data-count="4"] .speaker-tile .video-placeholder .avatar {
-    width: 100px;
-    height: 100px;
-    font-size: 48px;
+.speakers-container[data-count="4"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="5"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="6"] .speaker-tile .video-placeholder .avatar {
+    width: 90px;
+    height: 90px;
+    font-size: 42px;
 }
 
-.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]) .speaker-tile .video-placeholder .avatar {
-    width: 60px;
-    height: 60px;
-    font-size: 28px;
+.speakers-container[data-count="7"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="8"] .speaker-tile .video-placeholder .avatar,
+.speakers-container[data-count="9"] .speaker-tile .video-placeholder .avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 32px;
+}
+
+/* 10+ people - smallest avatars */
+.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]) .speaker-tile .video-placeholder .avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
 }
 
 .speaker-avatar {
