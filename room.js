@@ -1131,8 +1131,15 @@ function subscribeToParticipants() {
                 }
             }
             
-            // If someone left, check if room should be deleted
+            // If someone left, check if host transfer is needed
             if (payload.eventType === 'DELETE') {
+                const leftParticipant = payload.old;
+                
+                // Check if the person who left was the host
+                if (leftParticipant.role === 'host') {
+                    await transferHost();
+                }
+                
                 await checkRoomStatus();
                 
                 // Also remove their LiveKit tiles if they disconnected
@@ -1259,33 +1266,95 @@ async function leaveRoom() {
     }
 }
 
+// Transfer host to another participant
+async function transferHost() {
+    try {
+        // Get all remaining participants
+        const { data: remainingParticipants, error: fetchError } = await supabase
+            .from('room_participants')
+            .select('user_id, username, role, is_speaking')
+            .eq('room_id', roomId);
+        
+        if (fetchError) throw fetchError;
+        
+        if (!remainingParticipants || remainingParticipants.length === 0) {
+            // No one left, room will be deleted by checkRoomStatus
+            return;
+        }
+        
+        let newHost = null;
+        
+        // Priority 1: Check for moderators
+        const moderators = remainingParticipants.filter(p => p.role === 'moderator');
+        if (moderators.length > 0) {
+            newHost = moderators[0]; // Take first moderator
+            console.log('👑 Transferring host to moderator:', newHost.username);
+        } else {
+            // Priority 2: Check for speakers
+            const speakers = remainingParticipants.filter(p => p.is_speaking);
+            if (speakers.length > 0) {
+                newHost = speakers[0]; // Take first speaker
+                console.log('👑 Transferring host to speaker:', newHost.username);
+            } else {
+                // Priority 3: Randomly pick someone and promote to speaker + host
+                const randomIndex = Math.floor(Math.random() * remainingParticipants.length);
+                newHost = remainingParticipants[randomIndex];
+                console.log('👑 Transferring host to random participant (promoting to speaker):', newHost.username);
+                
+                // Promote to speaker first
+                const { error: speakerError } = await supabase
+                    .from('room_participants')
+                    .update({ 
+                        is_speaking: true,
+                        role: 'speaker'
+                    })
+                    .eq('room_id', roomId)
+                    .eq('user_id', newHost.user_id);
+                
+                if (speakerError) {
+                    console.error('Error promoting to speaker:', speakerError);
+                }
+            }
+        }
+        
+        // Promote to host
+        if (newHost) {
+            const { error: hostError } = await supabase
+                .from('room_participants')
+                .update({ role: 'host' })
+                .eq('room_id', roomId)
+                .eq('user_id', newHost.user_id);
+            
+            if (hostError) {
+                console.error('Error transferring host:', hostError);
+            } else {
+                console.log('✅ Host transferred to:', newHost.username);
+                
+                // If current user is the new host, update local state
+                if (newHost.user_id === currentUserId) {
+                    currentRole = 'host';
+                    saveSession();
+                    updateUIForRole();
+                    showNotification('You are now the host!', 'success');
+                } else {
+                    showNotification(`${newHost.username} is now the host`, 'info');
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error transferring host:', error);
+    }
+}
+
 // Check if room should be deleted (empty or host left)
 async function checkAndDeleteRoom() {
     try {
-        // If the leaving user is the host, delete the room immediately
+        // If the leaving user is the host, transfer host instead of deleting
         if (currentRole === 'host') {
-            console.log('Host leaving, deleting room...');
-            
-            // Delete all participants first
-            await supabase
-                .from('room_participants')
-                .delete()
-                .eq('room_id', roomId);
-            
-            // Delete all chat messages
-            await supabase
-                .from('chat_messages')
-                .delete()
-                .eq('room_id', roomId);
-            
-            // Delete the room
-            await supabase
-                .from('rooms')
-                .delete()
-                .eq('id', roomId);
-            
-            console.log('✅ Room deleted (host left)');
-            return;
+            console.log('Host leaving, transferring host...');
+            await transferHost();
+            // Don't return, continue to check if room is empty
         }
         
         // Check remaining participants
