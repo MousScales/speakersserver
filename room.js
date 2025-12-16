@@ -573,13 +573,29 @@ function showParticipantMenu(participant) {
         return;
     }
     
+    const menuModal = document.getElementById('participantMenuModal');
+    const menuName = document.getElementById('participantMenuName');
+    const menuOptions = document.getElementById('participantMenuOptions');
+    const menuClose = document.getElementById('participantMenuClose');
+    
+    if (!menuModal || !menuName || !menuOptions || !menuClose) return;
+    
+    // Set participant name
+    menuName.textContent = participant.username;
+    
+    // Clear existing options
+    menuOptions.innerHTML = '';
+    
     // Create menu options
     const options = [];
     
     // Everyone can mute anyone (client-side)
     options.push({ 
         label: mutedParticipants.has(participant.user_id) ? '🔊 Unmute' : '🔇 Mute',
-        action: () => toggleMuteParticipant(participant.user_id)
+        action: () => {
+            toggleMuteParticipant(participant.user_id);
+            hideParticipantMenu();
+        }
     });
     
     // Host/Mod actions
@@ -587,27 +603,65 @@ function showParticipantMenu(participant) {
         if (participant.hand_raised && !participant.is_speaking) {
             options.push({ 
                 label: '✅ Invite to Speak',
-                action: () => inviteToSpeak(participant.user_id)
+                action: () => {
+                    inviteToSpeak(participant.user_id);
+                    hideParticipantMenu();
+                }
             });
         }
         
         options.push({ 
             label: '✕ Kick',
-            action: () => kickParticipant(participant.user_id),
+            action: () => {
+                kickParticipant(participant.user_id);
+                hideParticipantMenu();
+            },
             danger: true
         });
     }
     
-    // Show menu
-    if (options.length > 0) {
-        const optionText = options.map((opt, idx) => `${idx + 1}. ${opt.label}`).join('\n');
-        const choice = prompt(`Actions for ${participant.username}:\n${optionText}\n\nEnter number or cancel:`);
-        if (choice && !isNaN(choice) && parseInt(choice) > 0 && parseInt(choice) <= options.length) {
-            const selectedOption = options[parseInt(choice) - 1];
-            if (selectedOption.action) {
-                selectedOption.action();
-            }
+    // Create option buttons
+    options.forEach(option => {
+        const optionBtn = document.createElement('button');
+        optionBtn.className = 'participant-menu-option';
+        if (option.danger) {
+            optionBtn.classList.add('danger');
         }
+        optionBtn.textContent = option.label;
+        optionBtn.addEventListener('click', () => {
+            if (option.action) {
+                option.action();
+            }
+        });
+        menuOptions.appendChild(optionBtn);
+    });
+    
+    // Show menu
+    menuModal.classList.add('show');
+    
+    // Close handlers
+    menuClose.addEventListener('click', hideParticipantMenu);
+    menuModal.addEventListener('click', (e) => {
+        if (e.target === menuModal) {
+            hideParticipantMenu();
+        }
+    });
+    
+    // Close on Escape key
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            hideParticipantMenu();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+// Hide participant menu
+function hideParticipantMenu() {
+    const menuModal = document.getElementById('participantMenuModal');
+    if (menuModal) {
+        menuModal.classList.remove('show');
     }
 }
 
