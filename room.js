@@ -16,7 +16,6 @@ const sendBtn = document.getElementById('sendBtn');
 const leaveBtn = document.getElementById('leaveBtn');
 const raiseHandBtn = document.getElementById('raiseHandBtn');
 const micBtn = document.getElementById('micBtn');
-const videoBtn = document.getElementById('videoBtn');
 const screenShareBtn = document.getElementById('screenShareBtn');
 const participantsBtn = document.getElementById('participantsBtn');
 const participantCount = document.getElementById('participantCount');
@@ -39,10 +38,8 @@ let currentTab = 'all';
 // LiveKit State
 let livekitRoom = null;
 let isMicOn = false;
-let isVideoOn = false;
 let isScreenSharing = false;
 let localAudioTrack = null;
-let localVideoTrack = null;
 let screenShareTrack = null;
 
 // Client-side muted participants (Set of user IDs)
@@ -1638,50 +1635,7 @@ async function toggleScreenShare() {
     }
 }
 
-// Toggle video
-async function toggleVideo() {
-    if (!livekitRoom) {
-        showNotification('Not connected to audio/video', 'error');
-        return;
-    }
-    
-    // Check if user has permission to publish
-    if (currentRole === 'participant') {
-        showNotification('Raise your hand to speak', 'error');
-        return;
-    }
-    
-    try {
-        if (!isVideoOn) {
-            // Enable video
-            localVideoTrack = await LivekitClient.createLocalVideoTrack();
-            await livekitRoom.localParticipant.publishTrack(localVideoTrack);
-            isVideoOn = true;
-            videoBtn.classList.add('active');
-            console.log('✅ Video enabled');
-            
-            // Attach local video
-            attachVideoTrack(localVideoTrack, livekitRoom.localParticipant);
-            
-        } else {
-            // Disable video
-            if (localVideoTrack) {
-                await livekitRoom.localParticipant.unpublishTrack(localVideoTrack);
-                localVideoTrack.stop();
-                localVideoTrack = null;
-            }
-            isVideoOn = false;
-            videoBtn.classList.remove('active');
-            console.log('✅ Video disabled');
-            
-            // Remove local video tile
-            removeVideoTile(livekitRoom.localParticipant.identity);
-        }
-    } catch (error) {
-        console.error('Error toggling video:', error);
-        showNotification('Failed to toggle video', 'error');
-    }
-}
+// Video functionality removed
 
 // Attach screen share track to DOM
 function attachScreenShareTrack(track, participant) {
