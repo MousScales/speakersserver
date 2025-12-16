@@ -13,7 +13,7 @@
         <!-- Main Content Area -->
         <main class="room-main">
             <!-- Room Header -->
-            <header class="room-header">
+            <header class="room-header" style="flex-shrink: 0;">
                 <div class="room-info">
                     <h1 id="roomTitle">Room Title</h1>
                     <span class="room-category" id="roomCategory"></span>
@@ -44,11 +44,24 @@
                 </div>
             </header>
 
-            <!-- Video Grid -->
-            <div class="video-grid" id="videoGrid">
-                <!-- Active speakers will appear here -->
-                <div class="speakers-container" id="speakersContainer">
-                    <!-- Speaker tiles will be added here -->
+            <!-- Main Content Area -->
+            <div class="main-content-area" id="mainContentArea">
+                <!-- Active Speakers Section (Top) -->
+                <div class="active-speakers-section">
+                    <div class="speakers-container" id="speakersContainer">
+                        <!-- Active speaker tiles will be added here -->
+                    </div>
+                </div>
+
+                <!-- Audience Section (Bottom) -->
+                <div class="audience-section">
+                    <div class="audience-header">
+                        <h3>Audience — <span id="audienceCount">0</span></h3>
+                        <input type="text" class="audience-search" placeholder="Search" id="audienceSearch">
+                    </div>
+                    <div class="audience-list" id="audienceList">
+                        <!-- Audience member tiles will be added here -->
+                    </div>
                 </div>
             </div>
         </main>

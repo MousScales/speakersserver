@@ -24,6 +24,9 @@ const participantsPanel = document.getElementById('participantsPanel');
 const closePanelBtn = document.getElementById('closePanelBtn');
 const panelContent = document.getElementById('panelContent');
 const speakersContainer = document.getElementById('speakersContainer');
+const audienceList = document.getElementById('audienceList');
+const audienceCount = document.getElementById('audienceCount');
+const audienceSearch = document.getElementById('audienceSearch');
 
 // State
 let currentUsername = '';
@@ -294,6 +297,7 @@ async function loadParticipants() {
         
         updateParticipantsPanel();
         updateSpeakersList();
+        updateAudienceList();
         
     } catch (error) {
         console.error('Error loading participants:', error);
@@ -407,7 +411,7 @@ function updateParticipantsPanel() {
     });
 }
 
-// Update speakers list in main view
+// Update speakers list in main view (active speakers at top)
 function updateSpeakersList() {
     if (!speakersContainer) return;
     
@@ -415,23 +419,157 @@ function updateSpeakersList() {
     
     speakersContainer.innerHTML = '';
     
+    // Update grid layout attribute
+    speakersContainer.setAttribute('data-count', speakers.length);
+    
     speakers.forEach(speaker => {
-        const tile = document.createElement('div');
-        tile.className = 'speaker-tile';
+        const tile = createParticipantTile(speaker.user_id, speaker.username);
         
-        const initial = speaker.username.charAt(0).toUpperCase();
+        // Add role badge if host or moderator
+        if (speaker.role === 'host') {
+            const badge = document.createElement('div');
+            badge.className = 'speaker-badge host';
+            badge.textContent = '👑';
+            tile.appendChild(badge);
+        } else if (speaker.role === 'moderator') {
+            const badge = document.createElement('div');
+            badge.className = 'speaker-badge moderator';
+            badge.textContent = '🛡️';
+            tile.appendChild(badge);
+        }
         
-        tile.innerHTML = `
-            <div class="speaker-avatar">${initial}</div>
-            <div class="speaker-name">
-                ${escapeHtml(speaker.username)}
-                ${speaker.role === 'host' ? '<span class="speaker-status">(Host)</span>' : ''}
-                ${speaker.role === 'moderator' ? '<span class="speaker-status">(Mod)</span>' : ''}
-            </div>
-        `;
+        // Add click handler to edit/interact
+        tile.addEventListener('click', () => {
+            showParticipantMenu(speaker);
+        });
         
         speakersContainer.appendChild(tile);
     });
+    
+    // Update audience list (non-speaking participants)
+    updateAudienceList();
+}
+
+// Update audience list (non-speaking participants at bottom)
+function updateAudienceList() {
+    if (!audienceList || !audienceCount) return;
+    
+    const audience = participants.filter(p => !p.is_speaking);
+    
+    if (audienceCount) {
+        audienceCount.textContent = audience.length;
+    }
+    
+    audienceList.innerHTML = '';
+    
+    // Filter by search if applicable
+    const searchTerm = audienceSearch ? audienceSearch.value.toLowerCase() : '';
+    const filteredAudience = searchTerm 
+        ? audience.filter(p => p.username.toLowerCase().includes(searchTerm))
+        : audience;
+    
+    filteredAudience.forEach(member => {
+        const memberElement = document.createElement('div');
+        memberElement.className = 'audience-member';
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'audience-member-avatar';
+        const initial = member.username.charAt(0).toUpperCase();
+        avatar.textContent = initial;
+        
+        // Check if this participant has a video track
+        if (livekitRoom) {
+            const participant = livekitRoom.remoteParticipants.get(member.user_id);
+            if (participant) {
+                participant.videoTrackPublications.forEach(publication => {
+                    if (publication.track) {
+                        const video = document.createElement('video');
+                        video.autoplay = true;
+                        video.playsInline = true;
+                        publication.track.attach(video);
+                        avatar.appendChild(video);
+                    }
+                });
+            }
+        }
+        
+        const name = document.createElement('div');
+        name.className = 'audience-member-name';
+        name.textContent = member.username;
+        
+        // Add badge if hand raised
+        if (member.hand_raised) {
+            const badge = document.createElement('div');
+            badge.className = 'audience-member-badge';
+            badge.textContent = '✋';
+            avatar.appendChild(badge);
+        }
+        
+        memberElement.appendChild(avatar);
+        memberElement.appendChild(name);
+        
+        // Add click handler
+        memberElement.addEventListener('click', () => {
+            showParticipantMenu(member);
+        });
+        
+        audienceList.appendChild(memberElement);
+    });
+}
+
+// Show participant menu/actions when clicked
+function showParticipantMenu(participant) {
+    const isMe = participant.user_id === currentUserId;
+    const canModerate = (currentRole === 'host' || currentRole === 'moderator') && !isMe;
+    const isTargetHost = participant.role === 'host';
+    
+    // Create menu options
+    const options = [];
+    
+    if (isMe) {
+        options.push({ label: 'This is you', disabled: true });
+    } else {
+        // Everyone can mute anyone (client-side)
+        options.push({ 
+            label: mutedParticipants.has(participant.user_id) ? '🔊 Unmute' : '🔇 Mute',
+            action: () => toggleMuteParticipant(participant.user_id)
+        });
+        
+        // Host/Mod actions
+        if (canModerate && !isTargetHost) {
+            if (participant.hand_raised && !participant.is_speaking) {
+                options.push({ 
+                    label: '✅ Invite to Speak',
+                    action: () => inviteToSpeak(participant.user_id)
+                });
+            }
+            
+            if (currentRole === 'host' && participant.role === 'speaker') {
+                options.push({ 
+                    label: '👑 Make Moderator',
+                    action: () => makeModeratorFunc(participant.user_id)
+                });
+            }
+            
+            options.push({ 
+                label: '✕ Kick',
+                action: () => kickParticipant(participant.user_id),
+                danger: true
+            });
+        }
+    }
+    
+    // Show simple alert for now (can be replaced with a proper modal)
+    if (options.length > 0 && !options[0].disabled) {
+        const optionText = options.map((opt, idx) => `${idx + 1}. ${opt.label}`).join('\n');
+        const choice = prompt(`Actions for ${participant.username}:\n${optionText}\n\nEnter number or cancel:`);
+        if (choice && !isNaN(choice) && parseInt(choice) > 0 && parseInt(choice) <= options.length) {
+            const selectedOption = options[parseInt(choice) - 1];
+            if (selectedOption.action) {
+                selectedOption.action();
+            }
+        }
+    }
 }
 
 // Raise/lower hand
@@ -788,7 +926,7 @@ function subscribeToParticipants() {
                 await checkRoomStatus();
             }
             
-            loadParticipants();
+            await loadParticipants();
         })
         .subscribe();
     
@@ -995,6 +1133,13 @@ document.querySelectorAll('.panel-tab').forEach(tab => {
         updateParticipantsPanel();
     });
 });
+
+// Audience search functionality
+if (audienceSearch) {
+    audienceSearch.addEventListener('input', () => {
+        updateAudienceList();
+    });
+}
 
 // Handle page refresh vs actual close
 let isRefreshing = false;
