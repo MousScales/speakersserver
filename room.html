@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room - Speakers Server</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="room.css">
+</head>
+<body>
+    <div class="room-container">
+        <!-- Main Content Area -->
+        <main class="room-main">
+            <!-- Room Header -->
+            <header class="room-header">
+                <div class="room-info">
+                    <h1 id="roomTitle">Room Title</h1>
+                    <span class="room-category" id="roomCategory"></span>
+                    <span class="room-role" id="roomRole">Participant</span>
+                </div>
+                <div class="room-controls">
+                    <!-- Participant controls -->
+                    <button class="control-btn" id="raiseHandBtn" title="Raise Hand" style="display: none;">
+                        <span>✋</span> Raise Hand
+                    </button>
+                    
+                    <!-- Speaker controls (when invited to speak) -->
+                    <button class="control-btn" id="micBtn" title="Mute/Unmute" style="display: none;">
+                        <span>🎤</span>
+                    </button>
+                    <button class="control-btn" id="videoBtn" title="Video On/Off" style="display: none;">
+                        <span>📹</span>
+                    </button>
+                    
+                    <!-- Host/Moderator controls -->
+                    <button class="control-btn" id="participantsBtn" title="View Participants" style="display: none;">
+                        <span>👥</span> <span id="participantCount">0</span>
+                    </button>
+                    
+                    <button class="control-btn leave" id="leaveBtn" title="Leave Room">
+                        <span>🚪</span> Leave
+                    </button>
+                </div>
+            </header>
+
+            <!-- Video Grid -->
+            <div class="video-grid" id="videoGrid">
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <div class="placeholder-icon">👋</div>
+                    <p id="placeholderText">Waiting to be invited to speak...</p>
+                    <p class="subtitle">You can chat with others while waiting</p>
+                </div>
+                <!-- Active speakers will appear here -->
+                <div class="speakers-container" id="speakersContainer" style="display: none;">
+                    <!-- Speaker tiles will be added here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Participants Panel (for host/moderator) -->
+        <div class="participants-panel" id="participantsPanel" style="display: none;">
+            <div class="panel-header">
+                <h3>Participants</h3>
+                <button class="close-panel" id="closePanelBtn">×</button>
+            </div>
+            <div class="panel-tabs">
+                <button class="panel-tab active" data-tab="all">All (<span id="allCount">0</span>)</button>
+                <button class="panel-tab" data-tab="speakers">Speakers (<span id="speakersCount">0</span>)</button>
+                <button class="panel-tab" data-tab="raised">Raised Hands (<span id="raisedCount">0</span>)</button>
+            </div>
+            <div class="panel-content" id="panelContent">
+                <!-- Participants will be listed here -->
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Chat -->
+        <aside class="chat-sidebar">
+            <div class="sidebar-header">
+                <h3>Chat</h3>
+                <span class="chat-badge">Everyone can chat</span>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    id="chatInput" 
+                    placeholder="Type a message..."
+                    autocomplete="off"
+                >
+                <button id="sendBtn" class="send-btn">Send</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Username Modal -->
+    <div id="usernameModal" class="modal" style="display: block;">
+        <div class="modal-content">
+            <h2>Join Room</h2>
+            <form id="usernameForm">
+                <div class="form-group">
+                    <label for="username">Enter your name</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        placeholder="Your name" 
+                        required
+                        autofocus
+                    >
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Join Room</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- LiveKit Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+    <!-- Config (contains Supabase and LiveKit credentials) -->
+    <script src="config.js"></script>
+    <!-- Room Script -->
+    <script src="room.js"></script>
+</body>
+</html>
+

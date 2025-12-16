@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speakers Server - Open Forum</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>🎙️ Speakers Server</h1>
+            </div>
+            <nav>
+                <a href="#" class="nav-link">Home</a>
+                <a href="#" class="nav-link">Discussions</a>
+                <a href="#" class="nav-link">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Active Rooms Section -->
+        <section class="rooms-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Active Rooms</h2>
+                    <button class="btn-primary" id="startDiscussionBtn">+ New Room</button>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-category="all">All</button>
+                    <button class="tab" data-category="technology">Technology</button>
+                    <button class="tab" data-category="entertainment">Entertainment</button>
+                    <button class="tab" data-category="science">Science</button>
+                    <button class="tab" data-category="politics">Politics</button>
+                    <button class="tab" data-category="sports">Sports</button>
+                    <button class="tab" data-category="lifestyle">Lifestyle</button>
+                    <button class="tab" data-category="education">Education</button>
+                    <button class="tab" data-category="gaming">Gaming</button>
+                    <button class="tab" data-category="general">General</button>
+                </div>
+
+                <!-- Rooms Grid -->
+                <div class="rooms-grid" id="roomsGrid">
+                    <!-- Room cards will be loaded from Supabase -->
+                    <p style="text-align: center; color: var(--text-secondary); padding: 3rem;">Loading rooms...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for creating a discussion -->
+    <div id="createDiscussionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Start a New Discussion</h2>
+            <form id="discussionForm">
+                <div class="form-group">
+                    <label for="discussionTitle">Discussion Title</label>
+                    <input type="text" id="discussionTitle" name="title" placeholder="Enter a compelling title..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="discussionDescription">Description</label>
+                    <textarea id="discussionDescription" name="description" placeholder="What's this discussion about?" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="technology">Technology</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="science">Science</option>
+                        <option value="politics">Politics</option>
+                        <option value="sports">Sports</option>
+                        <option value="lifestyle">Lifestyle</option>
+                        <option value="education">Education</option>
+                        <option value="gaming">Gaming</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Discussion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Speakers Server. Free and open discussions for everyone.</p>
+        </div>
+    </footer>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Config (contains Supabase credentials) -->
+    <script src="config.js"></script>
+    <!-- Main Application Script -->
+    <script src="script.js"></script>
+</body>
+</html>
+
