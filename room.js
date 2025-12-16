@@ -72,9 +72,8 @@ if (!roomId) {
             // Hide modal and rejoin automatically
             usernameModal.style.display = 'none';
             
-            // Hide placeholder immediately (host or any role)
-            if (videoPlaceholder) videoPlaceholder.style.display = 'none';
-            if (speakersContainer) speakersContainer.style.display = 'grid';
+        // Show speakers container immediately (host or any role)
+        if (speakersContainer) speakersContainer.style.display = 'grid';
             
             // Verify participant still exists in database
             const { data: existingParticipant } = await supabase
@@ -136,9 +135,8 @@ usernameForm.addEventListener('submit', async (e) => {
     // Close modal
     usernameModal.style.display = 'none';
     
-    // Hide placeholder immediately for all users
-    if (videoPlaceholder) videoPlaceholder.style.display = 'none';
-    if (speakersContainer) speakersContainer.style.display = 'grid';
+        // Show speakers container immediately for all users
+        if (speakersContainer) speakersContainer.style.display = 'grid';
     
     // Load room data
     await loadRoom();
