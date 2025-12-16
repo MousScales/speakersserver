@@ -237,7 +237,6 @@ async function updateUIForRole() {
         roomRole.style.color = '#64748b';
         raiseHandBtn.style.display = 'flex';
         micBtn.style.display = 'none';
-        videoBtn.style.display = 'none';
         if (screenShareBtn) screenShareBtn.style.display = 'none';
         
         // Show video area immediately
@@ -259,7 +258,6 @@ async function updateUIForRole() {
         }
         
         micBtn.style.display = 'flex';
-        videoBtn.style.display = 'flex';
         if (screenShareBtn) screenShareBtn.style.display = 'flex';
         
         // Everyone can see participants panel
@@ -1109,10 +1107,7 @@ micBtn.addEventListener('click', async () => {
     await toggleMic();
 });
 
-// Video button
-videoBtn.addEventListener('click', async () => {
-    await toggleVideo();
-});
+// Video functionality removed
 
 // Screen share button (if exists)
 if (screenShareBtn) {
@@ -1254,9 +1249,7 @@ async function disconnectFromLiveKit() {
         await room.disconnect();
         
         isMicOn = false;
-        isVideoOn = false;
         localAudioTrack = null;
-        localVideoTrack = null;
         
         console.log('✅ Disconnected from LiveKit');
         
