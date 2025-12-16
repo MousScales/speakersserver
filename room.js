@@ -48,62 +48,64 @@ if (!roomId) {
 }
 
 // Check for existing session (page refresh)
-const sessionKey = `room_session_${roomId}`;
-const existingSession = localStorage.getItem(sessionKey);
+(async function checkSession() {
+    const sessionKey = `room_session_${roomId}`;
+    const existingSession = localStorage.getItem(sessionKey);
 
-if (existingSession) {
-    try {
-        const session = JSON.parse(existingSession);
-        
-        // Restore session data
-        currentUsername = session.username;
-        currentUserId = session.userId;
-        currentRole = session.role || 'participant';
-        
-        console.log('✅ Restored session:', { username: currentUsername, userId: currentUserId, role: currentRole });
-        
-        // Hide modal and rejoin automatically
-        usernameModal.style.display = 'none';
-        
-        // Verify participant still exists in database
-        const { data: existingParticipant } = await supabase
-            .from('room_participants')
-            .select('*')
-            .eq('room_id', roomId)
-            .eq('user_id', currentUserId)
-            .single();
-        
-        if (existingParticipant) {
-            // Update role from database (might have changed)
-            currentRole = existingParticipant.role;
+    if (existingSession) {
+        try {
+            const session = JSON.parse(existingSession);
             
-            // Load room and continue
-            await loadRoom();
-            await updateUIForRole();
-            subscribeToChat();
-            subscribeToParticipants();
+            // Restore session data
+            currentUsername = session.username;
+            currentUserId = session.userId;
+            currentRole = session.role || 'participant';
             
-            showNotification('Welcome back!', 'success');
-        } else {
-            // Participant no longer in room, rejoin
-            await loadRoom();
-            await joinRoom();
-            await updateUIForRole();
-            subscribeToChat();
-            subscribeToParticipants();
+            console.log('✅ Restored session:', { username: currentUsername, userId: currentUserId, role: currentRole });
+            
+            // Hide modal and rejoin automatically
+            usernameModal.style.display = 'none';
+            
+            // Verify participant still exists in database
+            const { data: existingParticipant } = await supabase
+                .from('room_participants')
+                .select('*')
+                .eq('room_id', roomId)
+                .eq('user_id', currentUserId)
+                .single();
+            
+            if (existingParticipant) {
+                // Update role from database (might have changed)
+                currentRole = existingParticipant.role;
+                
+                // Load room and continue
+                await loadRoom();
+                await updateUIForRole();
+                subscribeToChat();
+                subscribeToParticipants();
+                
+                showNotification('Welcome back!', 'success');
+            } else {
+                // Participant no longer in room, rejoin
+                await loadRoom();
+                await joinRoom();
+                await updateUIForRole();
+                subscribeToChat();
+                subscribeToParticipants();
+            }
+            
+        } catch (error) {
+            console.error('Error restoring session:', error);
+            // Clear invalid session
+            localStorage.removeItem(sessionKey);
+            // Show username modal
+            usernameModal.style.display = 'flex';
         }
-        
-    } catch (error) {
-        console.error('Error restoring session:', error);
-        // Clear invalid session
-        localStorage.removeItem(sessionKey);
-        // Show username modal
+    } else {
+        // No existing session, show username modal
         usernameModal.style.display = 'flex';
     }
-} else {
-    // No existing session, show username modal
-    usernameModal.style.display = 'flex';
-}
+})();
 
 // Handle username submission
 usernameForm.addEventListener('submit', async (e) => {
