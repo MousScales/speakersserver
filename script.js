@@ -40,7 +40,7 @@ async function displayRooms(category = 'all') {
     
     // Display rooms
     if (filteredRooms.length === 0) {
-        roomsGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No rooms in this category yet. Be the first to create one!</p>';
+        roomsGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem; width: 100%; grid-column: 1 / -1;">No rooms in this category yet. Be the first to create one!</p>';
         return;
     }
     
