@@ -17,6 +17,7 @@ const leaveBtn = document.getElementById('leaveBtn');
 const raiseHandBtn = document.getElementById('raiseHandBtn');
 const micBtn = document.getElementById('micBtn');
 const videoBtn = document.getElementById('videoBtn');
+const screenShareBtn = document.getElementById('screenShareBtn');
 const participantsBtn = document.getElementById('participantsBtn');
 const participantCount = document.getElementById('participantCount');
 const participantsPanel = document.getElementById('participantsPanel');
@@ -38,8 +39,10 @@ let currentTab = 'all';
 let livekitRoom = null;
 let isMicOn = false;
 let isVideoOn = false;
+let isScreenSharing = false;
 let localAudioTrack = null;
 let localVideoTrack = null;
+let screenShareTrack = null;
 
 // Client-side muted participants (Set of user IDs)
 let mutedParticipants = new Set();
@@ -231,6 +234,7 @@ async function updateUIForRole() {
         raiseHandBtn.style.display = 'flex';
         micBtn.style.display = 'none';
         videoBtn.style.display = 'none';
+        screenShareBtn.style.display = 'none';
         
         // Show video area so they can watch speakers
         videoPlaceholder.style.display = 'none';
@@ -253,6 +257,7 @@ async function updateUIForRole() {
         
         micBtn.style.display = 'flex';
         videoBtn.style.display = 'flex';
+        screenShareBtn.style.display = 'flex';
         
         if (currentRole === 'moderator' || currentRole === 'host') {
             participantsBtn.style.display = 'flex';
@@ -850,6 +855,11 @@ videoBtn.addEventListener('click', async () => {
     await toggleVideo();
 });
 
+// Screen share button
+screenShareBtn.addEventListener('click', async () => {
+    await toggleScreenShare();
+});
+
 // Panel tabs
 document.querySelectorAll('.panel-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -1003,12 +1013,24 @@ function setupLiveKitListeners() {
     
     // Track subscribed
     livekitRoom.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-        console.log('Track subscribed:', track.kind, 'from', participant.identity);
+        console.log('Track subscribed:', track.kind, 'from', participant.identity, 'source:', publication.source);
         
         if (track.kind === LivekitClient.Track.Kind.Video) {
-            attachVideoTrack(track, participant);
+            if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                // Screen share track
+                attachScreenShareTrack(track, participant);
+            } else {
+                // Regular camera track
+                attachVideoTrack(track, participant);
+            }
         } else if (track.kind === LivekitClient.Track.Kind.Audio) {
-            attachAudioTrack(track, participant);
+            if (publication.source === LivekitClient.Track.Source.ScreenShareAudio) {
+                // Screen share audio (e.g., from tab audio)
+                attachAudioTrack(track, participant);
+            } else {
+                // Regular microphone audio
+                attachAudioTrack(track, participant);
+            }
         }
     });
     
@@ -1190,6 +1212,52 @@ async function toggleMic() {
     }
 }
 
+// Toggle screen share
+async function toggleScreenShare() {
+    if (!livekitRoom) {
+        showNotification('Not connected to audio/video', 'error');
+        return;
+    }
+    
+    // Check if user has permission to publish
+    if (currentRole === 'participant') {
+        showNotification('Raise your hand to speak', 'error');
+        return;
+    }
+    
+    try {
+        if (!isScreenSharing) {
+            // Start screen sharing
+            await livekitRoom.localParticipant.setScreenShareEnabled(true);
+            isScreenSharing = true;
+            screenShareBtn.classList.add('active');
+            screenShareBtn.querySelector('span').textContent = '🛑';
+            console.log('✅ Screen sharing started');
+            showNotification('Screen sharing started', 'success');
+        } else {
+            // Stop screen sharing
+            await livekitRoom.localParticipant.setScreenShareEnabled(false);
+            isScreenSharing = false;
+            screenShareBtn.classList.remove('active');
+            screenShareBtn.querySelector('span').textContent = '🖥️';
+            console.log('✅ Screen sharing stopped');
+            showNotification('Screen sharing stopped', 'success');
+        }
+    } catch (error) {
+        console.error('Error toggling screen share:', error);
+        if (error.name === 'NotAllowedError') {
+            showNotification('Screen sharing permission denied', 'error');
+        } else if (error.name === 'AbortError') {
+            showNotification('Screen sharing cancelled', 'error');
+        } else {
+            showNotification('Failed to toggle screen share', 'error');
+        }
+        isScreenSharing = false;
+        screenShareBtn.classList.remove('active');
+        screenShareBtn.querySelector('span').textContent = '🖥️';
+    }
+}
+
 // Toggle video
 async function toggleVideo() {
     if (!livekitRoom) {
@@ -1233,6 +1301,39 @@ async function toggleVideo() {
         console.error('Error toggling video:', error);
         showNotification('Failed to toggle video', 'error');
     }
+}
+
+// Attach screen share track to DOM
+function attachScreenShareTrack(track, participant) {
+    const identity = participant.identity;
+    const participantName = participant.name || participant.identity;
+    const screenShareId = `${identity}_screen`;
+    
+    // Check if screen share tile already exists
+    let tile = document.querySelector(`[data-participant-id="${screenShareId}"]`);
+    
+    if (!tile) {
+        // Create new tile for screen share
+        tile = createParticipantTile(screenShareId, `${participantName} (Screen)`);
+        tile.classList.add('screen-share-tile');
+        speakersContainer.appendChild(tile);
+        
+        console.log('🖥️ Created screen share tile for', participantName);
+    }
+    
+    // Mark tile as having video
+    tile.classList.add('has-video');
+    
+    // Attach track to video element
+    const videoElement = tile.querySelector('video');
+    if (videoElement) {
+        track.attach(videoElement);
+        videoElement.style.objectFit = 'contain'; // Screen shares look better with contain
+        console.log('✅ Screen share attached for', participantName);
+    }
+    
+    // Update grid layout
+    updateGridLayout();
 }
 
 // Attach video track to DOM

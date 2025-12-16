@@ -398,6 +398,23 @@
     animation: pulse 1s ease-in-out infinite;
 }
 
+/* Screen share tiles - larger and more prominent */
+.speaker-tile.screen-share-tile {
+    grid-column: span 2;
+    background: #000;
+    border-color: #667eea;
+}
+
+.speaker-tile.screen-share-tile video {
+    object-fit: contain !important;
+}
+
+@media (max-width: 768px) {
+    .speaker-tile.screen-share-tile {
+        grid-column: span 1;
+    }
+}
+
 @keyframes pulse {
     0%, 100% {
         box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);

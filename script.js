@@ -67,10 +67,22 @@ cancelBtn.addEventListener('click', () => {
     modal.style.display = 'none';
 });
 
+// Info modal handlers
+infoBtn.addEventListener('click', () => {
+    infoModal.style.display = 'block';
+});
+
+closeInfoModal.addEventListener('click', () => {
+    infoModal.style.display = 'none';
+});
+
 // Close modal when clicking outside
 window.addEventListener('click', (event) => {
     if (event.target === modal) {
         modal.style.display = 'none';
+    }
+    if (event.target === infoModal) {
+        infoModal.style.display = 'none';
     }
 });
 
