@@ -143,10 +143,15 @@ async function updateUIForRole() {
         roomRole.style.background = '#f1f5f9';
         roomRole.style.color = '#64748b';
         raiseHandBtn.style.display = 'flex';
-        placeholderText.textContent = 'Raise your hand to speak';
+        micBtn.style.display = 'none';
+        videoBtn.style.display = 'none';
         
-        // Disconnect from LiveKit if connected
-        await disconnectFromLiveKit();
+        // Show video area so they can watch speakers
+        videoPlaceholder.style.display = 'none';
+        speakersContainer.style.display = 'grid';
+        
+        // Connect to LiveKit as viewer (watch only, no publish)
+        await connectToLiveKit(false);
         
     } else if (currentRole === 'speaker' || currentRole === 'moderator' || currentRole === 'host') {
         if (currentRole === 'speaker') {
@@ -170,8 +175,8 @@ async function updateUIForRole() {
         videoPlaceholder.style.display = 'none';
         speakersContainer.style.display = 'grid';
         
-        // Connect to LiveKit
-        await connectToLiveKit();
+        // Connect to LiveKit with publish permission
+        await connectToLiveKit(true);
     }
     
     updateSpeakersList();
