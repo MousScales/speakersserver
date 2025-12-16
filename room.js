@@ -1064,20 +1064,24 @@ function setupLiveKitListeners() {
                     updateGridLayout();
                 }
             } else {
-                // Remove video but keep the tile with placeholder
+                // Remove video but keep the tile - show placeholder again
                 const tile = document.querySelector(`[data-participant-id="${participant.identity}"]`);
                 if (tile) {
                     tile.classList.remove('has-video');
+                    
+                    // Detach track from video element
                     const videoElement = tile.querySelector('video');
                     if (videoElement) {
                         track.detach(videoElement);
                         videoElement.style.display = 'none';
                     }
-                    // Show placeholder again
+                    
+                    // Show placeholder again (with initial)
                     const placeholder = tile.querySelector('.video-placeholder');
                     if (placeholder) {
                         placeholder.style.display = 'flex';
                     }
+                    
                     console.log('📹 Video removed, showing placeholder for', participant.identity);
                 }
             }
@@ -1114,10 +1118,14 @@ function setupLiveKitListeners() {
         // Process already-published tracks from existing participants
         participant.trackPublications.forEach((publication) => {
             if (publication.isSubscribed && publication.track) {
-                console.log('Processing existing track:', publication.kind, 'from', participant.identity);
+                console.log('Processing existing track:', publication.kind, 'from', participant.identity, 'source:', publication.source);
                 
                 if (publication.kind === LivekitClient.Track.Kind.Video) {
-                    attachVideoTrack(publication.track, participant);
+                    if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                        attachScreenShareTrack(publication.track, participant);
+                    } else {
+                        attachVideoTrack(publication.track, participant);
+                    }
                 } else if (publication.kind === LivekitClient.Track.Kind.Audio) {
                     attachAudioTrack(publication.track, participant);
                 }
@@ -1403,13 +1411,24 @@ function attachVideoTrack(track, participant) {
         placeholder.style.display = 'none';
     }
     
-    // Attach track to video element
-    const videoElement = tile.querySelector('video');
-    if (videoElement) {
-        track.attach(videoElement);
+    // Attach track to video element (reuse existing or create new)
+    let videoElement = tile.querySelector('video');
+    if (!videoElement) {
+        videoElement = document.createElement('video');
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+        videoElement.style.width = '100%';
+        videoElement.style.height = '100%';
+        videoElement.style.objectFit = 'cover';
         videoElement.style.display = 'block';
-        console.log('✅ Video attached for', participantName);
+        tile.insertBefore(videoElement, tile.firstChild);
     }
+    
+    // Attach track
+    track.attach(videoElement);
+    videoElement.style.display = 'block';
+    
+    console.log('✅ Video attached for', participantName);
     
     // Update grid layout
     updateGridLayout();
