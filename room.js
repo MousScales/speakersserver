@@ -522,12 +522,9 @@ function createAudienceMemberElement(member, isRaisedHand) {
     if (isRaisedHand && member.hand_raised_at) {
         const timer = document.createElement('div');
         timer.className = 'audience-hand-timer';
-        const raisedAt = new Date(member.hand_raised_at);
-        const now = new Date();
-        const diffMs = now - raisedAt;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffSecs = Math.floor((diffMs % 60000) / 1000);
-        timer.textContent = `${diffMins}:${diffSecs.toString().padStart(2, '0')}`;
+        timer.setAttribute('data-hand-raised-at', member.hand_raised_at);
+        // Timer will be updated by interval
+        updateHandRaiseTimer(timer, member.hand_raised_at);
         name.appendChild(timer);
     }
     
@@ -937,15 +934,37 @@ function subscribeToParticipants() {
     // Update hand raise timers every second
     setInterval(() => {
         updateHandRaiseTimers();
+        updateAudienceList(); // Refresh audience to update raised hands timers
     }, 1000);
+}
+
+// Update hand raise timer element
+function updateHandRaiseTimer(timerEl, raisedAtString) {
+    if (!timerEl || !raisedAtString) return;
+    const raisedAt = new Date(raisedAtString);
+    const now = new Date();
+    const diffMs = now - raisedAt;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffSecs = Math.floor((diffMs % 60000) / 1000);
+    timerEl.textContent = `${diffMins}:${diffSecs.toString().padStart(2, '0')}`;
 }
 
 // Update hand raise timers in real-time
 function updateHandRaiseTimers() {
+    // Update timers in participants panel
     const timerElements = document.querySelectorAll('.hand-raise-timer');
     timerElements.forEach(timerEl => {
         const participantItem = timerEl.closest('.participant-item');
         if (!participantItem) return;
+        
+    // Update timers in raised hands section
+    const audienceTimers = document.querySelectorAll('.audience-hand-timer');
+    audienceTimers.forEach(timerEl => {
+        const raisedAt = timerEl.getAttribute('data-hand-raised-at');
+        if (raisedAt) {
+            updateHandRaiseTimer(timerEl, raisedAt);
+        }
+    });
         
         // Find participant data
         const itemUserId = participantItem.getAttribute('data-user-id');
