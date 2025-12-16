@@ -1,10 +1,25 @@
 // Vercel Serverless Function for LiveKit Token Generation
-import { AccessToken } from 'livekit-server-sdk';
 
 export default async function handler(req, res) {
     console.log('🚀 Token endpoint called');
     console.log('Method:', req.method);
     console.log('Query:', req.query);
+    
+    // Import LiveKit SDK inside handler for better error handling
+    let AccessToken;
+    try {
+        const livekitSDK = await import('livekit-server-sdk');
+        AccessToken = livekitSDK.AccessToken;
+        console.log('✅ LiveKit SDK imported successfully');
+    } catch (importError) {
+        console.error('❌ Failed to import LiveKit SDK:', importError);
+        return res.status(500).json({ 
+            error: 'Failed to load LiveKit SDK',
+            details: importError.message,
+            type: importError.name
+        });
+    }
+    
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
