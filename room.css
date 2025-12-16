@@ -149,9 +149,9 @@
 }
 
 .speakers-container {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     gap: 24px;
     width: auto;
     min-width: 100%;
