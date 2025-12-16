@@ -118,27 +118,6 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         console.log('✅ Configuration loaded', { environment: isLocal ? 'local' : 'production' });
-        
-        // Check authentication
-        (async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'auth.html';
-                return;
-            }
-            
-            // Check if profile is complete
-            const { data: profile } = await supabase
-                .from('user_profiles')
-                .select('display_name, profile_picture_url')
-                .eq('id', session.user.id)
-                .single();
-            
-            if (!profile || !profile.display_name) {
-                window.location.href = 'onboarding.html';
-                return;
-            }
-        })();
     </script>
     
     <!-- Main Application Script -->

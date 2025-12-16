@@ -80,33 +80,40 @@ if (themeToggleBtnRoom) {
     });
 }
 
-// Check for authentication and load user profile
+// Check for authentication and load user profile (or use anonymous)
+let isAuthenticated = false;
 (async function checkAuthAndLoadProfile() {
     // Check if user is authenticated
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    if (!session || sessionError) {
-        alert('Please log in to join a room');
-        window.location.href = 'auth.html';
-        return;
+    if (session && !sessionError) {
+        isAuthenticated = true;
+        
+        // Load user profile
+        const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('display_name, profile_picture_url')
+            .eq('id', session.user.id)
+            .single();
+
+        if (profile && !profileError && profile.display_name) {
+            // Set user data from authenticated profile
+            currentUserId = session.user.id;
+            currentUsername = profile.display_name;
+        } else {
+            // Profile incomplete, treat as anonymous
+            isAuthenticated = false;
+        }
     }
-
-    // Load user profile
-    const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('display_name, profile_picture_url')
-        .eq('id', session.user.id)
-        .single();
-
-    if (profileError || !profile || !profile.display_name) {
-        alert('Please complete your profile first');
-        window.location.href = 'onboarding.html';
-        return;
+    
+    // If not authenticated, generate anonymous user
+    if (!isAuthenticated) {
+        // Generate anonymous user ID and name
+        const anonymousNumber = await getNextAnonymousNumber();
+        currentUserId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        currentUsername = `Anonymous ${anonymousNumber}`;
+        console.log('👤 Using anonymous account:', currentUsername);
     }
-
-    // Set user data from authenticated profile
-    currentUserId = session.user.id;
-    currentUsername = profile.display_name;
     
     // Check for existing session (page refresh)
     const sessionKey = `room_session_${roomId}`;
@@ -223,6 +230,34 @@ function generateUserId() {
     return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Get next anonymous number for naming
+async function getNextAnonymousNumber() {
+    try {
+        // Get all participants in this room
+        const { data: participants } = await supabase
+            .from('room_participants')
+            .select('username')
+            .eq('room_id', roomId);
+        
+        if (!participants) return 1;
+        
+        // Find highest anonymous number
+        let maxNumber = 0;
+        participants.forEach(p => {
+            const match = p.username.match(/^Anonymous (\d+)$/);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNumber) maxNumber = num;
+            }
+        });
+        
+        return maxNumber + 1;
+    } catch (error) {
+        console.error('Error getting anonymous number:', error);
+        return 1;
+    }
+}
+
 // Join room function (called after auth check)
 async function joinRoom() {
     // Set role based on whether user is host
@@ -328,6 +363,29 @@ async function loadRoom() {
 // Update UI based on role
 async function updateUIForRole() {
     roomRole.textContent = capitalizeFirst(currentRole);
+    
+    // Disable chat for anonymous users
+    if (!isAuthenticated) {
+        if (chatInput) {
+            chatInput.disabled = true;
+            chatInput.placeholder = 'Please log in to chat';
+        }
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.5';
+            sendBtn.style.cursor = 'not-allowed';
+        }
+    } else {
+        if (chatInput) {
+            chatInput.disabled = false;
+            chatInput.placeholder = 'Type a message...';
+        }
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+            sendBtn.style.cursor = 'pointer';
+        }
+    }
     
     if (currentRole === 'participant') {
         roomRole.style.background = '#f1f5f9';
@@ -703,8 +761,8 @@ function showParticipantMenu(participant) {
         }
     });
     
-    // Host/Mod actions
-    if (canModerate && !isTargetHost) {
+    // Host/Mod actions (only for logged-in users)
+    if (canModerate && !isTargetHost && !participant.user_id.startsWith('anonymous_')) {
         if (participant.hand_raised && !participant.is_speaking) {
             options.push({ 
                 label: '✅ Invite to Speak',
@@ -858,6 +916,12 @@ async function toggleHandRaise() {
 // Invite to speak (host only, only if hand is raised)
 window.inviteToSpeak = async function(userId) {
     try {
+        // Prevent inviting anonymous users
+        if (userId.startsWith('anonymous_')) {
+            showNotification('Cannot invite anonymous users to speak', 'error');
+            return;
+        }
+        
         // Check if participant has raised their hand
         const { data: participant } = await supabase
             .from('room_participants')
@@ -1031,6 +1095,12 @@ async function updateRoomParticipantCount() {
 
 // Send message
 async function sendMessage() {
+    // Prevent anonymous users from sending messages
+    if (!isAuthenticated) {
+        showNotification('Please log in to send messages', 'error');
+        return;
+    }
+    
     const message = chatInput.value.trim();
     if (!message) return;
     
@@ -1350,24 +1420,32 @@ async function transferHost() {
             return;
         }
         
+        // Filter out anonymous users (user_id starts with "anonymous_")
+        const loggedInParticipants = remainingParticipants.filter(p => !p.user_id.startsWith('anonymous_'));
+        
+        if (loggedInParticipants.length === 0) {
+            console.log('⚠️ No logged-in users available for host transfer');
+            return;
+        }
+        
         let newHost = null;
         
-        // Priority 1: Check for moderators
-        const moderators = remainingParticipants.filter(p => p.role === 'moderator');
+        // Priority 1: Check for moderators (logged in only)
+        const moderators = loggedInParticipants.filter(p => p.role === 'moderator');
         if (moderators.length > 0) {
             newHost = moderators[0]; // Take first moderator
             console.log('👑 Transferring host to moderator:', newHost.username);
         } else {
-            // Priority 2: Check for speakers
-            const speakers = remainingParticipants.filter(p => p.is_speaking);
+            // Priority 2: Check for speakers (logged in only)
+            const speakers = loggedInParticipants.filter(p => p.is_speaking);
             if (speakers.length > 0) {
                 newHost = speakers[0]; // Take first speaker
                 console.log('👑 Transferring host to speaker:', newHost.username);
             } else {
-                // Priority 3: Randomly pick someone and promote to speaker + host
-                const randomIndex = Math.floor(Math.random() * remainingParticipants.length);
-                newHost = remainingParticipants[randomIndex];
-                console.log('👑 Transferring host to random participant (promoting to speaker):', newHost.username);
+                // Priority 3: Randomly pick a logged-in user and promote to speaker + host
+                const randomIndex = Math.floor(Math.random() * loggedInParticipants.length);
+                newHost = loggedInParticipants[randomIndex];
+                console.log('👑 Transferring host to random logged-in participant (promoting to speaker):', newHost.username);
                 
                 // Promote to speaker first
                 const { error: speakerError } = await supabase

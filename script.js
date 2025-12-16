@@ -51,7 +51,15 @@ async function displayRooms(category = 'all') {
 }
 
 // Open modal
-startBtn.addEventListener('click', () => {
+startBtn.addEventListener('click', async () => {
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        showNotification('Please log in to create a room', 'error');
+        window.location.href = 'auth.html';
+        return;
+    }
+    
     modal.style.display = 'block';
 });
 
