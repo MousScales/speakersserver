@@ -26,6 +26,9 @@ const speakersContainer = document.getElementById('speakersContainer');
 const audienceList = document.getElementById('audienceList');
 const audienceCount = document.getElementById('audienceCount');
 const audienceSearch = document.getElementById('audienceSearch');
+const raisedHandsSection = document.getElementById('raisedHandsSection');
+const raisedHandsList = document.getElementById('raisedHandsList');
+const raisedHandsCount = document.getElementById('raisedHandsCount');
 
 // State
 let currentUsername = '';
@@ -441,81 +444,173 @@ function updateSpeakersList() {
 function updateAudienceList() {
     if (!audienceList || !audienceCount) return;
     
-    const audience = participants.filter(p => !p.is_speaking);
+    const allAudience = participants.filter(p => !p.is_speaking);
+    const raisedHands = allAudience.filter(p => p.hand_raised);
+    const regularAudience = allAudience.filter(p => !p.hand_raised);
     
     if (audienceCount) {
-        audienceCount.textContent = audience.length;
+        audienceCount.textContent = regularAudience.length;
     }
     
+    // Update raised hands section
+    if (raisedHandsSection && raisedHandsList && raisedHandsCount) {
+        if (raisedHands.length > 0) {
+            raisedHandsSection.style.display = 'block';
+            raisedHandsCount.textContent = raisedHands.length;
+            raisedHandsList.innerHTML = '';
+            
+            raisedHands.forEach(member => {
+                const memberElement = createAudienceMemberElement(member, true);
+                raisedHandsList.appendChild(memberElement);
+            });
+        } else {
+            raisedHandsSection.style.display = 'none';
+        }
+    }
+    
+    // Update regular audience list
     audienceList.innerHTML = '';
     
     // Filter by search if applicable
     const searchTerm = audienceSearch ? audienceSearch.value.toLowerCase() : '';
     const filteredAudience = searchTerm 
-        ? audience.filter(p => p.username.toLowerCase().includes(searchTerm))
-        : audience;
+        ? regularAudience.filter(p => p.username.toLowerCase().includes(searchTerm))
+        : regularAudience;
     
     filteredAudience.forEach(member => {
-        const memberElement = document.createElement('div');
-        memberElement.className = 'audience-member';
-        
-        const avatar = document.createElement('div');
-        avatar.className = 'audience-member-avatar';
-        const initial = member.username.charAt(0).toUpperCase();
-        avatar.textContent = initial;
-        
-        // Check if this participant has a video track
-        if (livekitRoom) {
-            const participant = livekitRoom.remoteParticipants.get(member.user_id);
-            if (participant) {
-                participant.videoTrackPublications.forEach(publication => {
-                    if (publication.track) {
-                        const video = document.createElement('video');
-                        video.autoplay = true;
-                        video.playsInline = true;
-                        publication.track.attach(video);
-                        avatar.appendChild(video);
-                    }
-                });
-            }
-        }
-        
-        const name = document.createElement('div');
-        name.className = 'audience-member-name';
-        name.textContent = member.username;
-        
-        // Add badge if hand raised
-        if (member.hand_raised) {
-            const badge = document.createElement('div');
-            badge.className = 'audience-member-badge';
-            badge.textContent = '✋';
-            avatar.appendChild(badge);
-        }
-        
-        memberElement.appendChild(avatar);
-        memberElement.appendChild(name);
-        
-        // Add click handler
-        memberElement.addEventListener('click', () => {
-            showParticipantMenu(member);
-        });
-        
+        const memberElement = createAudienceMemberElement(member, false);
         audienceList.appendChild(memberElement);
     });
 }
 
-// Show participant menu/actions when clicked - simplified to just mute/unmute
+// Create audience member element
+function createAudienceMemberElement(member, isRaisedHand) {
+    const memberElement = document.createElement('div');
+    memberElement.className = 'audience-member';
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'audience-member-avatar';
+    const initial = member.username.charAt(0).toUpperCase();
+    avatar.textContent = initial;
+    
+    // Add role badge if host or moderator
+    if (member.role === 'host') {
+        const badge = document.createElement('div');
+        badge.className = 'audience-role-badge host';
+        badge.textContent = '👑';
+        avatar.appendChild(badge);
+    } else if (member.role === 'moderator') {
+        const badge = document.createElement('div');
+        badge.className = 'audience-role-badge moderator';
+        badge.textContent = '🛡️';
+        avatar.appendChild(badge);
+    }
+    
+    // Add hand raise icon if raised
+    if (isRaisedHand || member.hand_raised) {
+        const handBadge = document.createElement('div');
+        handBadge.className = 'audience-hand-badge';
+        handBadge.textContent = '✋';
+        avatar.appendChild(handBadge);
+    }
+    
+    const name = document.createElement('div');
+    name.className = 'audience-member-name';
+    name.textContent = member.username;
+    
+    // Add countdown timer if hand raised
+    if (isRaisedHand && member.hand_raised_at) {
+        const timer = document.createElement('div');
+        timer.className = 'audience-hand-timer';
+        const raisedAt = new Date(member.hand_raised_at);
+        const now = new Date();
+        const diffMs = now - raisedAt;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffSecs = Math.floor((diffMs % 60000) / 1000);
+        timer.textContent = `${diffMins}:${diffSecs.toString().padStart(2, '0')}`;
+        name.appendChild(timer);
+    }
+    
+    memberElement.appendChild(avatar);
+    memberElement.appendChild(name);
+    
+    // Add click handler to show interaction menu
+    memberElement.addEventListener('click', () => {
+        showParticipantMenu(member);
+    });
+    
+    return memberElement;
+}
+
+// Show participant menu/actions when clicked
 function showParticipantMenu(participant) {
     const isMe = participant.user_id === currentUserId;
+    const canModerate = (currentRole === 'host' || currentRole === 'moderator') && !isMe;
+    const isTargetHost = participant.role === 'host';
     
     if (isMe) {
         // Don't show menu for yourself
         return;
     }
     
-    // Simple toggle mute/unmute on click
-    toggleMuteParticipant(participant.user_id);
+    // Create menu options
+    const options = [];
+    
+    // Everyone can mute anyone (client-side)
+    options.push({ 
+        label: mutedParticipants.has(participant.user_id) ? '🔊 Unmute' : '🔇 Mute',
+        action: () => toggleMuteParticipant(participant.user_id)
+    });
+    
+    // Host/Mod actions
+    if (canModerate && !isTargetHost) {
+        if (participant.hand_raised && !participant.is_speaking) {
+            options.push({ 
+                label: '✅ Invite to Speak',
+                action: () => inviteToSpeak(participant.user_id)
+            });
+        }
+        
+        options.push({ 
+            label: '✕ Kick',
+            action: () => kickParticipant(participant.user_id),
+            danger: true
+        });
+    }
+    
+    // Show menu
+    if (options.length > 0) {
+        const optionText = options.map((opt, idx) => `${idx + 1}. ${opt.label}`).join('\n');
+        const choice = prompt(`Actions for ${participant.username}:\n${optionText}\n\nEnter number or cancel:`);
+        if (choice && !isNaN(choice) && parseInt(choice) > 0 && parseInt(choice) <= options.length) {
+            const selectedOption = options[parseInt(choice) - 1];
+            if (selectedOption.action) {
+                selectedOption.action();
+            }
+        }
+    }
 }
+
+// Kick participant
+window.kickParticipant = async function(userId) {
+    if (!confirm('Are you sure you want to kick this participant?')) return;
+    
+    try {
+        const { error } = await supabase
+            .from('room_participants')
+            .delete()
+            .eq('room_id', roomId)
+            .eq('user_id', userId);
+        
+        if (error) throw error;
+        
+        showNotification('Participant removed', 'success');
+        
+    } catch (error) {
+        console.error('Error kicking participant:', error);
+        showNotification('Failed to kick participant', 'error');
+    }
+};
 
 // Raise/lower hand
 async function toggleHandRaise() {
