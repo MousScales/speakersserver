@@ -1533,10 +1533,7 @@ function setupParticipantListeners(participant) {
         updateSpeakingStatus(participant.identity, speaking);
     });
     
-    // Connection quality changed
-    participant.on(LivekitClient.ParticipantEvent.ConnectionQualityChanged, (quality) => {
-        updateConnectionQuality(participant.identity, quality);
-    });
+    // Connection quality indicator removed
 }
 
 // Update speaking status visual indicator
@@ -1561,45 +1558,7 @@ function updateSpeakingStatus(identity, isSpeaking) {
     }
 }
 
-// Update connection quality indicator
-function updateConnectionQuality(identity, quality) {
-    const tile = document.querySelector(`[data-participant-id="${identity}"]`);
-    if (!tile) return;
-    
-    // Remove existing connection indicator
-    let connectionIndicator = tile.querySelector('.connection-indicator');
-    if (!connectionIndicator) {
-        connectionIndicator = document.createElement('div');
-        connectionIndicator.className = 'connection-indicator';
-        tile.appendChild(connectionIndicator);
-    }
-    
-    // Map quality to CSS class
-    let qualityClass = 'poor';
-    switch (quality) {
-        case LivekitClient.ConnectionQuality.Excellent:
-            qualityClass = 'excellent';
-            break;
-        case LivekitClient.ConnectionQuality.Good:
-            qualityClass = 'good';
-            break;
-        case LivekitClient.ConnectionQuality.Poor:
-            qualityClass = 'poor';
-            break;
-        default:
-            qualityClass = 'bad';
-    }
-    
-    connectionIndicator.className = `connection-indicator ${qualityClass}`;
-    
-    // Create 4 bars
-    connectionIndicator.innerHTML = `
-        <div class="connection-bar" style="height: 6px;"></div>
-        <div class="connection-bar" style="height: 9px;"></div>
-        <div class="connection-bar" style="height: 12px;"></div>
-        <div class="connection-bar" style="height: 15px;"></div>
-    `;
-}
+// Connection quality indicator removed
 
 // Toggle microphone
 async function toggleMic() {
@@ -1845,21 +1804,12 @@ function createParticipantTile(identity, participantName) {
     muteIndicator.style.fontSize = '14px';
     muteIndicator.style.zIndex = '10';
     
-    // Connection indicator
-    const connectionIndicator = document.createElement('div');
-    connectionIndicator.className = 'connection-indicator good';
-    connectionIndicator.innerHTML = `
-        <div class="connection-bar" style="height: 6px;"></div>
-        <div class="connection-bar" style="height: 9px;"></div>
-        <div class="connection-bar" style="height: 12px;"></div>
-        <div class="connection-bar" style="height: 15px;"></div>
-    `;
+    // Connection indicator removed
     
     tile.appendChild(videoElement);
     tile.appendChild(placeholder);
     tile.appendChild(nameLabel);
     tile.appendChild(muteIndicator);
-    tile.appendChild(connectionIndicator);
     
     return tile;
 }
