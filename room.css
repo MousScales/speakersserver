@@ -5,14 +5,14 @@
     height: 100vh;
     overflow: hidden;
     position: relative;
-    background: #000;
+    background: #fff;
 }
 
 /* Main content area - no overflow */
 .main-content {
     height: 100%;
     overflow: hidden;
-    background: #000;
+    background: #fff;
 }
 
 /* Sidebars */
@@ -329,7 +329,7 @@
     padding: 8px;
     gap: 8px;
     overflow: hidden;
-    background: #000;
+    background: #fff;
     position: absolute;
     top: 0;
     left: 0;

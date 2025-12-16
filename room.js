@@ -72,7 +72,7 @@ if (!roomId) {
             // Hide modal and rejoin automatically
             usernameModal.style.display = 'none';
             
-            // Hide placeholder immediately
+            // Hide placeholder immediately (host or any role)
             if (videoPlaceholder) videoPlaceholder.style.display = 'none';
             if (speakersContainer) speakersContainer.style.display = 'grid';
             
@@ -136,7 +136,7 @@ usernameForm.addEventListener('submit', async (e) => {
     // Close modal
     usernameModal.style.display = 'none';
     
-    // Hide placeholder immediately
+    // Hide placeholder immediately for all users
     if (videoPlaceholder) videoPlaceholder.style.display = 'none';
     if (speakersContainer) speakersContainer.style.display = 'grid';
     
