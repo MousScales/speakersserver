@@ -236,7 +236,7 @@ async function updateUIForRole() {
         videoBtn.style.display = 'none';
         if (screenShareBtn) screenShareBtn.style.display = 'none';
         
-        // Show video area so they can watch speakers
+        // Show video area immediately (no placeholder)
         videoPlaceholder.style.display = 'none';
         speakersContainer.style.display = 'grid';
         
@@ -262,6 +262,7 @@ async function updateUIForRole() {
         // Everyone can see participants panel
         participantsBtn.style.display = 'flex';
         
+        // Show video area immediately (no placeholder)
         videoPlaceholder.style.display = 'none';
         speakersContainer.style.display = 'grid';
         
@@ -425,9 +426,20 @@ async function toggleHandRaise() {
     handRaised = !handRaised;
     
     try {
+        const updateData = { 
+            hand_raised: handRaised 
+        };
+        
+        // Set timestamp when raising hand
+        if (handRaised) {
+            updateData.hand_raised_at = new Date().toISOString();
+        } else {
+            updateData.hand_raised_at = null;
+        }
+        
         const { error } = await supabase
             .from('room_participants')
-            .update({ hand_raised: handRaised })
+            .update(updateData)
             .eq('room_id', roomId)
             .eq('user_id', currentUserId);
         
@@ -436,10 +448,15 @@ async function toggleHandRaise() {
         if (handRaised) {
             raiseHandBtn.classList.add('raised');
             raiseHandBtn.innerHTML = '<span>✋</span> Hand Raised';
+            showNotification('Hand raised! Waiting for host...', 'success');
         } else {
             raiseHandBtn.classList.remove('raised');
             raiseHandBtn.innerHTML = '<span>✋</span> Raise Hand';
+            showNotification('Hand lowered', 'success');
         }
+        
+        // Refresh participants to update timer
+        loadParticipants();
         
     } catch (error) {
         console.error('Error toggling hand:', error);
@@ -486,6 +503,7 @@ window.inviteToSpeak = async function(userId) {
 window.toggleMuteParticipant = function(userId) {
     // Find the participant's identity from LiveKit
     let participantIdentity = userId;
+    let participantName = '';
     
     // Try to find the participant in LiveKit room
     if (livekitRoom) {
@@ -493,7 +511,14 @@ window.toggleMuteParticipant = function(userId) {
             .find(p => p.identity === userId || p.name === userId);
         if (participant) {
             participantIdentity = participant.identity;
+            participantName = participant.name || participant.identity;
         }
+    }
+    
+    // Also try to find in participants array
+    const participantData = participants.find(p => p.user_id === userId);
+    if (participantData) {
+        participantName = participantData.username;
     }
     
     if (mutedParticipants.has(participantIdentity)) {
@@ -507,8 +532,17 @@ window.toggleMuteParticipant = function(userId) {
             audioElement.volume = 1.0;
         });
         
+        // Update mute indicator on video tile
+        const tile = document.querySelector(`[data-participant-id="${participantIdentity}"]`);
+        if (tile) {
+            const muteIndicator = tile.querySelector('.mute-indicator');
+            if (muteIndicator) {
+                muteIndicator.style.display = 'none';
+            }
+        }
+        
         console.log('🔊 Unmuted participant:', participantIdentity, '(for you only)');
-        showNotification('Participant unmuted (for you)', 'success');
+        showNotification(`${participantName || 'Participant'} unmuted (for you)`, 'success');
     } else {
         // Mute
         mutedParticipants.add(participantIdentity);
@@ -520,8 +554,17 @@ window.toggleMuteParticipant = function(userId) {
             audioElement.volume = 0;
         });
         
+        // Update mute indicator on video tile
+        const tile = document.querySelector(`[data-participant-id="${participantIdentity}"]`);
+        if (tile) {
+            const muteIndicator = tile.querySelector('.mute-indicator');
+            if (muteIndicator) {
+                muteIndicator.style.display = 'block';
+            }
+        }
+        
         console.log('🔇 Muted participant:', participantIdentity, '(for you only)');
-        showNotification('Participant muted (for you)', 'success');
+        showNotification(`${participantName || 'Participant'} muted (for you)`, 'success');
     }
     
     // Refresh panel to update button text
@@ -735,6 +778,33 @@ function subscribeToParticipants() {
             loadParticipants();
         })
         .subscribe();
+    
+    // Update hand raise timers every second
+    setInterval(() => {
+        updateHandRaiseTimers();
+    }, 1000);
+}
+
+// Update hand raise timers in real-time
+function updateHandRaiseTimers() {
+    const timerElements = document.querySelectorAll('.hand-raise-timer');
+    timerElements.forEach(timerEl => {
+        const participantItem = timerEl.closest('.participant-item');
+        if (!participantItem) return;
+        
+        // Find participant data
+        const itemUserId = participantItem.getAttribute('data-user-id');
+        const participant = participants.find(p => p.user_id === itemUserId);
+        
+        if (participant && participant.hand_raised && participant.hand_raised_at) {
+            const raisedAt = new Date(participant.hand_raised_at);
+            const now = new Date();
+            const diffMs = now - raisedAt;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffSecs = Math.floor((diffMs % 60000) / 1000);
+            timerEl.textContent = `(${diffMins}:${diffSecs.toString().padStart(2, '0')})`;
+        }
+    });
 }
 
 // Check room status (for cleanup)
@@ -1466,6 +1536,21 @@ function createParticipantTile(identity, participantName) {
     const tile = document.createElement('div');
     tile.className = 'speaker-tile';
     tile.setAttribute('data-participant-id', identity);
+    tile.setAttribute('data-participant-name', participantName);
+    
+    // Make tile clickable to mute/unmute
+    tile.style.cursor = 'pointer';
+    tile.addEventListener('click', () => {
+        // Find the user_id from participants array
+        const participant = participants.find(p => {
+            // Try to match by identity or name
+            return p.user_id === identity || p.username === participantName;
+        });
+        
+        if (participant && participant.user_id !== currentUserId) {
+            toggleMuteParticipant(participant.user_id);
+        }
+    });
     
     // Video element (hidden by default, shown when video track is attached)
     const videoElement = document.createElement('video');
@@ -1499,6 +1584,20 @@ function createParticipantTile(identity, participantName) {
     nameLabel.className = 'speaker-name';
     nameLabel.textContent = participantName;
     
+    // Mute indicator (shows if muted by current user)
+    const muteIndicator = document.createElement('div');
+    muteIndicator.className = 'mute-indicator';
+    muteIndicator.innerHTML = '🔇';
+    muteIndicator.style.display = 'none';
+    muteIndicator.style.position = 'absolute';
+    muteIndicator.style.top = '8px';
+    muteIndicator.style.right = '8px';
+    muteIndicator.style.background = 'rgba(0, 0, 0, 0.7)';
+    muteIndicator.style.padding = '4px 8px';
+    muteIndicator.style.borderRadius = '4px';
+    muteIndicator.style.fontSize = '14px';
+    muteIndicator.style.zIndex = '10';
+    
     // Connection indicator
     const connectionIndicator = document.createElement('div');
     connectionIndicator.className = 'connection-indicator good';
@@ -1512,6 +1611,7 @@ function createParticipantTile(identity, participantName) {
     tile.appendChild(videoElement);
     tile.appendChild(placeholder);
     tile.appendChild(nameLabel);
+    tile.appendChild(muteIndicator);
     tile.appendChild(connectionIndicator);
     
     return tile;
