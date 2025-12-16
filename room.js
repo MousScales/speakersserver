@@ -1211,6 +1211,46 @@ function setupLiveKitListeners() {
         console.log('Local track published:', publication.kind);
     });
     
+    // Remote track published (when someone turns on camera/mic after joining)
+    livekitRoom.on(LivekitClient.RoomEvent.TrackPublished, (publication, participant) => {
+        console.log('Remote track published:', publication.kind, 'from', participant.identity, 'source:', publication.source);
+        
+        // Automatically subscribe to the newly published track
+        if (publication.track) {
+            // Track is already available, attach it immediately
+            if (publication.kind === LivekitClient.Track.Kind.Video) {
+                if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                    attachScreenShareTrack(publication.track, participant);
+                } else {
+                    attachVideoTrack(publication.track, participant);
+                }
+            } else if (publication.kind === LivekitClient.Track.Kind.Audio) {
+                attachAudioTrack(publication.track, participant);
+            }
+        } else {
+            // Track not yet available, wait for subscription
+            console.log('Waiting for track to become available...');
+        }
+    });
+    
+    // Track unpublished (when someone turns off camera/mic)
+    livekitRoom.on(LivekitClient.RoomEvent.TrackUnpublished, (publication, participant) => {
+        console.log('Remote track unpublished:', publication.kind, 'from', participant.identity, 'source:', publication.source);
+        
+        if (publication.kind === LivekitClient.Track.Kind.Video) {
+            if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                // Remove screen share tile
+                const screenShareId = `${participant.identity}_screen`;
+                removeVideoTile(screenShareId);
+            } else {
+                // Remove regular video tile (show placeholder)
+                removeVideoTile(participant.identity);
+            }
+        } else if (publication.kind === LivekitClient.Track.Kind.Audio) {
+            detachAudioTrack(participant.identity);
+        }
+    });
+    
     // Disconnected
     livekitRoom.on(LivekitClient.RoomEvent.Disconnected, (reason) => {
         console.log('Disconnected from room, reason:', reason);
@@ -1255,6 +1295,44 @@ function setupLiveKitListeners() {
 
 // Setup listeners for a specific participant
 function setupParticipantListeners(participant) {
+    // Listen for when this participant publishes new tracks
+    participant.on(LivekitClient.ParticipantEvent.TrackPublished, (publication) => {
+        console.log('Participant published track:', publication.kind, 'from', participant.identity, 'source:', publication.source);
+        
+        // Wait for track to be available, then attach it
+        if (publication.track) {
+            if (publication.kind === LivekitClient.Track.Kind.Video) {
+                if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                    attachScreenShareTrack(publication.track, participant);
+                } else {
+                    attachVideoTrack(publication.track, participant);
+                }
+            } else if (publication.kind === LivekitClient.Track.Kind.Audio) {
+                attachAudioTrack(publication.track, participant);
+            }
+        } else {
+            // Track not yet available, subscribe to it
+            console.log('Subscribing to track:', publication.kind);
+            livekitRoom.subscribe(publication);
+        }
+    });
+    
+    // Listen for when this participant unpublishes tracks
+    participant.on(LivekitClient.ParticipantEvent.TrackUnpublished, (publication) => {
+        console.log('Participant unpublished track:', publication.kind, 'from', participant.identity, 'source:', publication.source);
+        
+        if (publication.kind === LivekitClient.Track.Kind.Video) {
+            if (publication.source === LivekitClient.Track.Source.ScreenShare) {
+                const screenShareId = `${participant.identity}_screen`;
+                removeVideoTile(screenShareId);
+            } else {
+                removeVideoTile(participant.identity);
+            }
+        } else if (publication.kind === LivekitClient.Track.Kind.Audio) {
+            detachAudioTrack(participant.identity);
+        }
+    });
+    
     // Speaking status changed
     participant.on(LivekitClient.ParticipantEvent.IsSpeakingChanged, (speaking) => {
         updateSpeakingStatus(participant.identity, speaking);
