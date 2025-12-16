@@ -508,10 +508,15 @@ function subscribeToChat() {
             table: 'chat_messages',
             filter: `room_id=eq.${roomId}`
         }, (payload) => {
+            console.log('✅ Real-time chat message received:', payload.new);
             displayMessage(payload.new);
             scrollToBottom();
         })
-        .subscribe();
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ Subscribed to real-time chat');
+            }
+        });
 }
 
 // Subscribe to participant changes
@@ -742,9 +747,22 @@ function setupLiveKitListeners() {
         updateConnectionQuality(participant.identity, quality);
     });
     
-    // Setup listeners for existing participants
+    // Setup listeners for existing participants AND process their tracks
     livekitRoom.remoteParticipants.forEach(participant => {
+        console.log('Setting up existing participant:', participant.identity);
         setupParticipantListeners(participant);
+        
+        // Process already-published tracks from existing participants
+        participant.trackPublications.forEach((publication) => {
+            if (publication.isSubscribed && publication.track) {
+                console.log('Processing existing track:', publication.kind, 'from', participant.identity);
+                
+                if (publication.kind === LivekitClient.Track.Kind.Video) {
+                    attachVideoTrack(publication.track, participant);
+                }
+                // Audio tracks are handled automatically by the browser
+            }
+        });
     });
     
     // Setup local participant listeners
