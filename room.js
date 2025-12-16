@@ -998,13 +998,15 @@ function setupLiveKitListeners() {
         console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
         
         if (track.kind === LivekitClient.Track.Kind.Video) {
-            // Don't remove the tile, just remove the video
+            // Remove video but keep the tile with placeholder
             const tile = document.querySelector(`[data-participant-id="${participant.identity}"]`);
             if (tile) {
+                tile.classList.remove('has-video');
                 const videoElement = tile.querySelector('video');
                 if (videoElement) {
                     track.detach(videoElement);
                 }
+                console.log('📹 Video removed, showing placeholder for', participant.identity);
             }
         } else if (track.kind === LivekitClient.Track.Kind.Audio) {
             detachAudioTrack(participant.identity);
@@ -1223,53 +1225,85 @@ function attachVideoTrack(track, participant) {
     let tile = document.querySelector(`[data-participant-id="${identity}"]`);
     
     if (!tile) {
-        // Create new tile
-        tile = document.createElement('div');
-        tile.className = 'speaker-tile';
-        tile.setAttribute('data-participant-id', identity);
-        
-        const videoElement = document.createElement('video');
-        videoElement.autoplay = true;
-        videoElement.playsInline = true;
-        videoElement.style.width = '100%';
-        videoElement.style.height = '100%';
-        videoElement.style.objectFit = 'cover';
-        
-        const nameLabel = document.createElement('div');
-        nameLabel.className = 'speaker-name';
-        nameLabel.textContent = participantName;
-        
-        // Add connection indicator
-        const connectionIndicator = document.createElement('div');
-        connectionIndicator.className = 'connection-indicator good';
-        connectionIndicator.innerHTML = `
-            <div class="connection-bar" style="height: 6px;"></div>
-            <div class="connection-bar" style="height: 9px;"></div>
-            <div class="connection-bar" style="height: 12px;"></div>
-            <div class="connection-bar" style="height: 15px;"></div>
-        `;
-        
-        tile.appendChild(videoElement);
-        tile.appendChild(nameLabel);
-        tile.appendChild(connectionIndicator);
+        // Create new tile with placeholder
+        tile = createParticipantTile(identity, participantName);
         speakersContainer.appendChild(tile);
         
-        // Setup listeners for this participant if not already done
+        // Setup listeners for this participant
         setupParticipantListeners(participant);
         
         console.log('📹 Created video tile for', participantName);
-    } else {
-        // Tile exists - just update the video element
-        console.log('📹 Updating existing tile for', participantName);
     }
+    
+    // Mark tile as having video
+    tile.classList.add('has-video');
     
     // Attach track to video element
     const videoElement = tile.querySelector('video');
     if (videoElement) {
         track.attach(videoElement);
-        videoElement.style.display = 'block'; // Make sure video is visible
         console.log('✅ Video attached for', participantName);
     }
+    
+    // Update grid layout
+    updateGridLayout();
+}
+
+// Create participant tile with placeholder
+function createParticipantTile(identity, participantName) {
+    const tile = document.createElement('div');
+    tile.className = 'speaker-tile';
+    tile.setAttribute('data-participant-id', identity);
+    
+    // Video element (hidden by default)
+    const videoElement = document.createElement('video');
+    videoElement.autoplay = true;
+    videoElement.playsInline = true;
+    
+    // Placeholder (shown when no video)
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-placeholder';
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = participantName.charAt(0).toUpperCase();
+    
+    const statusText = document.createElement('div');
+    statusText.className = 'status-text';
+    statusText.textContent = 'Camera off';
+    
+    placeholder.appendChild(avatar);
+    placeholder.appendChild(statusText);
+    
+    // Name label (always visible)
+    const nameLabel = document.createElement('div');
+    nameLabel.className = 'speaker-name';
+    nameLabel.textContent = participantName;
+    
+    // Connection indicator
+    const connectionIndicator = document.createElement('div');
+    connectionIndicator.className = 'connection-indicator good';
+    connectionIndicator.innerHTML = `
+        <div class="connection-bar" style="height: 6px;"></div>
+        <div class="connection-bar" style="height: 9px;"></div>
+        <div class="connection-bar" style="height: 12px;"></div>
+        <div class="connection-bar" style="height: 15px;"></div>
+    `;
+    
+    tile.appendChild(videoElement);
+    tile.appendChild(placeholder);
+    tile.appendChild(nameLabel);
+    tile.appendChild(connectionIndicator);
+    
+    return tile;
+}
+
+// Update grid layout based on participant count
+function updateGridLayout() {
+    const tiles = speakersContainer.querySelectorAll('.speaker-tile');
+    const count = tiles.length;
+    speakersContainer.setAttribute('data-count', count);
+    console.log(`📊 Grid updated for ${count} participant(s)`);
 }
 
 // Attach audio track to DOM
@@ -1335,6 +1369,7 @@ function removeVideoTile(identity) {
     const tile = document.querySelector(`[data-participant-id="${identity}"]`);
     if (tile) {
         tile.remove();
+        updateGridLayout();
     }
 }
 
