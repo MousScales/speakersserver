@@ -121,20 +121,7 @@
     <!-- LiveKit Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
     <!-- Config (contains Supabase and LiveKit credentials) -->
-    <script>
-        // Automatically use production config if available, fallback to local config
-        const configScript = document.createElement('script');
-        configScript.src = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'config.js' 
-            : 'config.production.js';
-        configScript.onerror = function() {
-            // Fallback to config.js if production config not found
-            const fallback = document.createElement('script');
-            fallback.src = 'config.js';
-            document.head.appendChild(fallback);
-        };
-        document.head.appendChild(configScript);
-    </script>
+    <script src="config.universal.js"></script>
     <!-- Room Script -->
     <script src="room.js"></script>
 </body>
