@@ -564,7 +564,7 @@ header .container {
 }
 
 .modal-content {
-    background: white;
+    background: var(--card-bg);
     margin: 5% auto;
     padding: 2rem;
     border-radius: 8px;
@@ -572,6 +572,8 @@ header .container {
     max-width: 600px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     animation: slideDown 0.3s ease;
+    border: 1px solid var(--border-color);
+    transition: background 0.3s, border-color 0.3s;
 }
 
 @keyframes slideDown {
@@ -621,12 +623,12 @@ header .container {
 .form-group select {
     width: 100%;
     padding: 0.625rem 0.75rem;
-    background: white;
+    background: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     color: var(--text-color);
     font-size: 0.9375rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
 }
 
 .form-group input:focus,
@@ -675,11 +677,12 @@ header .container {
 
 /* Footer */
 footer {
-    background: #f8fafc;
+    background: var(--card-bg);
     padding: 2rem 0;
     margin-top: 4rem;
     border-top: 1px solid var(--border-color);
     text-align: center;
+    transition: background 0.3s, border-color 0.3s;
 }
 
 footer p {
