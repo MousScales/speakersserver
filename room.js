@@ -545,6 +545,8 @@ function updateAudienceList() {
 function createAudienceMemberElement(member, isRaisedHand) {
     const memberElement = document.createElement('div');
     memberElement.className = 'audience-member';
+    memberElement.setAttribute('data-participant-id', member.user_id);
+    memberElement.setAttribute('data-participant-name', member.username);
     
     const avatar = document.createElement('div');
     avatar.className = 'audience-member-avatar';
