@@ -196,40 +196,7 @@
     flex-shrink: 0;
 }
 
-.speakers-container[data-count="3"] {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 700px;
-}
-
-.speakers-container[data-count="4"] {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 600px;
-}
-
-.speakers-container[data-count="5"],
-.speakers-container[data-count="6"] {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 800px;
-}
-
-.speakers-container[data-count="7"],
-.speakers-container[data-count="8"],
-.speakers-container[data-count="9"] {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 900px;
-}
-
-.speakers-container[data-count="10"],
-.speakers-container[data-count="11"],
-.speakers-container[data-count="12"] {
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 1000px;
-}
-
-.speakers-container:not([data-count="1"]):not([data-count="2"]):not([data-count="3"]):not([data-count="4"]):not([data-count="5"]):not([data-count="6"]):not([data-count="7"]):not([data-count="8"]):not([data-count="9"]):not([data-count="10"]):not([data-count="11"]):not([data-count="12"]) {
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 1000px;
-}
+/* All speakers use consistent size - carousel handles overflow */
 
 /* Speaker tile - circular */
 .speaker-tile {
