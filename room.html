@@ -120,8 +120,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- LiveKit Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
-    <!-- Config (contains Supabase and LiveKit credentials) -->
-    <script src="config.universal.js"></script>
+    
+    <!-- Inline Configuration (Safe for production - Supabase anon key is protected by RLS) -->
+    <script>
+        // Configuration - automatically works in both local and production environments
+        const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
+        const LIVEKIT_URL = 'wss://speakersserver-0je4i45z.livekit.cloud';
+        
+        // Detect environment and set token server URL
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const TOKEN_SERVER_URL = isLocal ? 'http://localhost:3001' : window.location.origin + '/api/token';
+        
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        console.log('✅ Configuration loaded', { environment: isLocal ? 'local' : 'production' });
+    </script>
+    
     <!-- Room Script -->
     <script src="room.js"></script>
 </body>
