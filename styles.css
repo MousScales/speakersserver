@@ -68,8 +68,10 @@ header .container {
 .logo h1 {
     font-size: 1.5rem;
     color: var(--text-color);
-    font-weight: 600;
+    font-weight: 700;
     margin: 0;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: -0.02em;
 }
 
 /* Theme Toggle Button */
@@ -122,10 +124,12 @@ header .container {
     border: none;
     color: var(--text-color);
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: color 0.2s;
     padding: 0.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.01em;
 }
 
 .info-btn:hover {
