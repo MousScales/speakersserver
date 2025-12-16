@@ -393,6 +393,7 @@
     font-weight: 600;
     color: var(--text-secondary);
     margin: 0;
+    flex-shrink: 0;
 }
 
 .audience-search {
