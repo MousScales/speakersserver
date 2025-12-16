@@ -1,4 +1,5 @@
 // Vercel Serverless Function for LiveKit Token Generation
+// Updated: Forces new deployment to load environment variables
 import { AccessToken } from 'livekit-server-sdk';
 
 export default async function handler(req, res) {
