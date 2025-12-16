@@ -1,6 +1,14 @@
 // Vercel Serverless Function for LiveKit Token Generation
-// Updated: Forces new deployment to load environment variables
-import { AccessToken } from 'livekit-server-sdk';
+// Updated: Enhanced error logging for debugging
+
+let AccessToken;
+try {
+    const sdk = await import('livekit-server-sdk');
+    AccessToken = sdk.AccessToken;
+    console.log('✅ LiveKit SDK loaded successfully');
+} catch (error) {
+    console.error('❌ Failed to load LiveKit SDK:', error);
+}
 
 export default async function handler(req, res) {
     // Enable CORS
@@ -22,6 +30,14 @@ export default async function handler(req, res) {
     try {
         const { roomName, participantName, identity } = req.query;
 
+        // Debug logging
+        console.log('Token request received:', { roomName, participantName, identity });
+        console.log('Environment check:', {
+            hasApiKey: !!process.env.LIVEKIT_API_KEY,
+            hasApiSecret: !!process.env.LIVEKIT_API_SECRET,
+            apiKeyPrefix: process.env.LIVEKIT_API_KEY?.substring(0, 6) || 'MISSING',
+        });
+
         if (!roomName || !participantName || !identity) {
             return res.status(400).json({ 
                 error: 'Missing required parameters: roomName, participantName, identity' 
@@ -33,7 +49,14 @@ export default async function handler(req, res) {
 
         if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
             console.error('Missing LiveKit credentials in environment variables');
-            return res.status(500).json({ error: 'Server configuration error' });
+            console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('LIVEKIT')));
+            return res.status(500).json({ 
+                error: 'Server configuration error: Missing LiveKit credentials',
+                debug: {
+                    hasApiKey: !!LIVEKIT_API_KEY,
+                    hasApiSecret: !!LIVEKIT_API_SECRET
+                }
+            });
         }
 
         // Create access token
