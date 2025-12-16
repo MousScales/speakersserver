@@ -957,15 +957,6 @@ function updateHandRaiseTimers() {
         const participantItem = timerEl.closest('.participant-item');
         if (!participantItem) return;
         
-    // Update timers in raised hands section
-    const audienceTimers = document.querySelectorAll('.audience-hand-timer');
-    audienceTimers.forEach(timerEl => {
-        const raisedAt = timerEl.getAttribute('data-hand-raised-at');
-        if (raisedAt) {
-            updateHandRaiseTimer(timerEl, raisedAt);
-        }
-    });
-        
         // Find participant data
         const itemUserId = participantItem.getAttribute('data-user-id');
         const participant = participants.find(p => p.user_id === itemUserId);
@@ -977,6 +968,15 @@ function updateHandRaiseTimers() {
             const diffMins = Math.floor(diffMs / 60000);
             const diffSecs = Math.floor((diffMs % 60000) / 1000);
             timerEl.textContent = `(${diffMins}:${diffSecs.toString().padStart(2, '0')})`;
+        }
+    });
+    
+    // Update timers in raised hands section
+    const audienceTimers = document.querySelectorAll('.audience-hand-timer');
+    audienceTimers.forEach(timerEl => {
+        const raisedAt = timerEl.getAttribute('data-hand-raised-at');
+        if (raisedAt) {
+            updateHandRaiseTimer(timerEl, raisedAt);
         }
     });
 }
