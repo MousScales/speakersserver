@@ -1456,10 +1456,7 @@ function setupLiveKitListeners() {
         }
     });
     
-    // Connection quality changed
-    livekitRoom.on(LivekitClient.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
-        updateConnectionQuality(participant.identity, quality);
-    });
+    // Connection quality indicator removed
     
     // Setup listeners for existing participants AND process their tracks
     livekitRoom.remoteParticipants.forEach(participant => {
