@@ -1579,6 +1579,11 @@ function attachScreenShareTrack(track, participant) {
 
 // Attach video track to DOM
 function attachVideoTrack(track, participant) {
+    if (!track) {
+        console.warn('No track provided to attachVideoTrack');
+        return;
+    }
+    
     const identity = participant.identity;
     const participantName = participant.name || participant.identity;
     
@@ -1594,6 +1599,23 @@ function attachVideoTrack(track, participant) {
         setupParticipantListeners(participant);
         
         console.log('📹 Created video tile for', participantName);
+    }
+    
+    // Ensure track is attached even if tile exists
+    const videoElement = tile.querySelector('video');
+    if (videoElement) {
+        // Hide placeholder
+        const placeholder = tile.querySelector('.video-placeholder');
+        if (placeholder) {
+            placeholder.style.display = 'none';
+        }
+        
+        // Attach track
+        track.attach(videoElement);
+        videoElement.style.display = 'block';
+        tile.classList.add('has-video');
+        
+        console.log('✅ Video track attached for', participantName);
     }
     
     // Mark tile as having video
