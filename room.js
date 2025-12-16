@@ -1601,26 +1601,6 @@ function attachVideoTrack(track, participant) {
         console.log('📹 Created video tile for', participantName);
     }
     
-    // Ensure track is attached even if tile exists
-    const videoElement = tile.querySelector('video');
-    if (videoElement) {
-        // Hide placeholder
-        const placeholder = tile.querySelector('.video-placeholder');
-        if (placeholder) {
-            placeholder.style.display = 'none';
-        }
-        
-        // Attach track
-        track.attach(videoElement);
-        videoElement.style.display = 'block';
-        tile.classList.add('has-video');
-        
-        console.log('✅ Video track attached for', participantName);
-    }
-    
-    // Mark tile as having video
-    tile.classList.add('has-video');
-    
     // Hide placeholder when video is active
     const placeholder = tile.querySelector('.video-placeholder');
     if (placeholder) {
@@ -1643,6 +1623,7 @@ function attachVideoTrack(track, participant) {
     // Attach track
     track.attach(videoElement);
     videoElement.style.display = 'block';
+    tile.classList.add('has-video');
     
     console.log('✅ Video attached for', participantName);
     
