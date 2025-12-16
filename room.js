@@ -23,8 +23,6 @@ const participantCount = document.getElementById('participantCount');
 const participantsPanel = document.getElementById('participantsPanel');
 const closePanelBtn = document.getElementById('closePanelBtn');
 const panelContent = document.getElementById('panelContent');
-const videoPlaceholder = document.getElementById('videoPlaceholder');
-const placeholderText = document.getElementById('placeholderText');
 const speakersContainer = document.getElementById('speakersContainer');
 
 // State
@@ -242,8 +240,7 @@ async function updateUIForRole() {
         videoBtn.style.display = 'none';
         if (screenShareBtn) screenShareBtn.style.display = 'none';
         
-        // Show video area immediately (no placeholder)
-        videoPlaceholder.style.display = 'none';
+        // Show video area immediately
         speakersContainer.style.display = 'grid';
         
         // Connect to LiveKit as viewer (watch only, no publish)
@@ -268,8 +265,7 @@ async function updateUIForRole() {
         // Everyone can see participants panel
         participantsBtn.style.display = 'flex';
         
-        // Show video area immediately (no placeholder)
-        videoPlaceholder.style.display = 'none';
+        // Show video area immediately
         speakersContainer.style.display = 'grid';
         
         // Connect to LiveKit with publish permission
