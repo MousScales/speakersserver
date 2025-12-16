@@ -139,7 +139,7 @@
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 1.5rem;
     min-height: 0;
     overflow: hidden;
@@ -148,22 +148,52 @@
 }
 
 .speakers-container {
-    display: grid;
+    display: flex;
     gap: 24px;
     width: 100%;
-    max-width: 1200px;
-    justify-content: center;
-    align-content: center;
+    height: 100%;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    padding: 1rem 0;
 }
 
-/* Active speakers grid layouts */
-.speakers-container[data-count="1"] {
-    grid-template-columns: 1fr;
+.speakers-container::-webkit-scrollbar {
+    height: 6px;
 }
 
-.speakers-container[data-count="2"] {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 500px;
+.speakers-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.speakers-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.speakers-container::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
+
+/* Active speakers - consistent sizing (same as 2 users) */
+.speakers-container[data-count="1"] .speaker-tile,
+.speakers-container[data-count="2"] .speaker-tile,
+.speakers-container[data-count="3"] .speaker-tile,
+.speakers-container[data-count="4"] .speaker-tile,
+.speakers-container[data-count="5"] .speaker-tile,
+.speakers-container[data-count="6"] .speaker-tile,
+.speakers-container[data-count="7"] .speaker-tile,
+.speakers-container[data-count="8"] .speaker-tile,
+.speakers-container[data-count="9"] .speaker-tile,
+.speakers-container[data-count="10"] .speaker-tile,
+.speakers-container[data-count="11"] .speaker-tile,
+.speakers-container[data-count="12"] .speaker-tile,
+.speakers-container .speaker-tile {
+    width: 200px;
+    height: 200px;
+    flex-shrink: 0;
 }
 
 .speakers-container[data-count="3"] {
