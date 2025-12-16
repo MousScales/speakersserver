@@ -975,15 +975,26 @@ function setupLiveKitListeners() {
         
         if (track.kind === LivekitClient.Track.Kind.Video) {
             attachVideoTrack(track, participant);
+        } else if (track.kind === LivekitClient.Track.Kind.Audio) {
+            attachAudioTrack(track, participant);
         }
     });
     
     // Track unsubscribed
     livekitRoom.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-        console.log('Track unsubscribed:', track.kind);
+        console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
         
         if (track.kind === LivekitClient.Track.Kind.Video) {
-            removeVideoTile(participant.identity);
+            // Don't remove the tile, just remove the video
+            const tile = document.querySelector(`[data-participant-id="${participant.identity}"]`);
+            if (tile) {
+                const videoElement = tile.querySelector('video');
+                if (videoElement) {
+                    track.detach(videoElement);
+                }
+            }
+        } else if (track.kind === LivekitClient.Track.Kind.Audio) {
+            detachAudioTrack(participant.identity);
         }
     });
     
@@ -1019,8 +1030,9 @@ function setupLiveKitListeners() {
                 
                 if (publication.kind === LivekitClient.Track.Kind.Video) {
                     attachVideoTrack(publication.track, participant);
+                } else if (publication.kind === LivekitClient.Track.Kind.Audio) {
+                    attachAudioTrack(publication.track, participant);
                 }
-                // Audio tracks are handled automatically by the browser
             }
         });
     });
@@ -1233,6 +1245,66 @@ function attachVideoTrack(track, participant) {
     // Attach track to video element
     const videoElement = tile.querySelector('video');
     track.attach(videoElement);
+    
+    console.log('✅ Video attached for', participantName);
+}
+
+// Attach audio track to DOM
+function attachAudioTrack(track, participant) {
+    const identity = participant.identity;
+    const participantName = participant.name || participant.identity;
+    
+    // Check if audio element already exists
+    let audioElement = document.querySelector(`audio[data-participant-id="${identity}"]`);
+    
+    if (!audioElement) {
+        // Create new audio element
+        audioElement = document.createElement('audio');
+        audioElement.autoplay = true;
+        audioElement.playsInline = true;
+        audioElement.setAttribute('data-participant-id', identity);
+        
+        // CRITICAL: Ensure audio is not muted
+        audioElement.muted = false;
+        audioElement.volume = 1.0;
+        
+        // Add to DOM (hidden)
+        document.body.appendChild(audioElement);
+        
+        console.log('🔊 Created audio element for', participantName);
+    }
+    
+    // Attach track to audio element
+    track.attach(audioElement);
+    
+    // Force play (in case of autoplay policy)
+    audioElement.play().then(() => {
+        console.log('✅ Audio playing for', participantName);
+    }).catch(error => {
+        console.warn('⚠️ Audio autoplay blocked for', participantName, '- user interaction may be required');
+        // Show notification to user
+        showNotification('Click anywhere to enable audio', 'error');
+        
+        // Enable audio on next user interaction
+        const enableAudio = () => {
+            audioElement.play().then(() => {
+                console.log('✅ Audio enabled after user interaction');
+                document.removeEventListener('click', enableAudio);
+                document.removeEventListener('keydown', enableAudio);
+            });
+        };
+        document.addEventListener('click', enableAudio, { once: true });
+        document.addEventListener('keydown', enableAudio, { once: true });
+    });
+}
+
+// Detach audio track
+function detachAudioTrack(identity) {
+    const audioElement = document.querySelector(`audio[data-participant-id="${identity}"]`);
+    if (audioElement) {
+        audioElement.remove();
+        console.log('🔇 Audio removed for', identity);
+    }
 }
 
 // Remove video tile
