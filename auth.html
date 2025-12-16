@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Speakers Server</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: var(--bg-color);
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .auth-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .auth-tab:hover {
+            color: var(--text-color);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .auth-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #059669;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        [data-theme="dark"] .error-message {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        [data-theme="dark"] .success-message {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Speakers Server</h1>
+                <p>Sign in to continue</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="signup">Sign Up</button>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="auth-btn" id="loginBtn">Login</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" required autocomplete="new-password" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" required autocomplete="new-password" minlength="6">
+                </div>
+                <button type="submit" class="auth-btn" id="signupBtn">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Tab switching
+        const tabs = document.querySelectorAll('.auth-tab');
+        const forms = document.querySelectorAll('.auth-form');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                forms.forEach(f => f.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tabName === 'login' ? 'loginForm' : 'signupForm').classList.add('active');
+                
+                hideMessages();
+            });
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            successMessage.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('show');
+            errorMessage.classList.remove('show');
+        }
+
+        function hideMessages() {
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+        }
+
+        // Check if user is already logged in
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                // Check if profile is complete
+                checkProfileAndRedirect(session.user.id);
+            }
+        });
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                showError(error.message);
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            } else {
+                // Check if profile is complete
+                checkProfileAndRedirect(data.user.id);
+            }
+        });
+
+        // Signup form
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+            
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const signupBtn = document.getElementById('signupBtn');
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+
+            signupBtn.disabled = true;
+            signupBtn.textContent = 'Signing up...';
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password
+            });
+
+            if (error) {
+                showError(error.message);
+                signupBtn.disabled = false;
+                signupBtn.textContent = 'Sign Up';
+            } else {
+                showSuccess('Account created! Redirecting to setup...');
+                setTimeout(() => {
+                    checkProfileAndRedirect(data.user.id);
+                }, 1000);
+            }
+        });
+
+        async function checkProfileAndRedirect(userId) {
+            const { data: profile, error } = await supabase
+                .from('user_profiles')
+                .select('display_name, profile_picture_url')
+                .eq('id', userId)
+                .single();
+
+            if (error || !profile || !profile.display_name) {
+                // Profile incomplete, redirect to onboarding
+                window.location.href = 'onboarding.html';
+            } else {
+                // Profile complete, redirect to home
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
+

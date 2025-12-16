@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - Speakers Server</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .onboarding-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: var(--bg-color);
+        }
+
+        .onboarding-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .onboarding-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .onboarding-header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .onboarding-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .profile-picture-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .profile-picture-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            background: var(--bg-color);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .profile-picture-preview:hover {
+            border-color: var(--primary-color);
+        }
+
+        .profile-picture-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-picture-preview .placeholder {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .profile-picture-preview .upload-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 3px solid var(--card-bg);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        [data-theme="dark"] .error-message {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <h1>Complete Your Profile</h1>
+                <p>Add your name and profile picture to get started</p>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <form id="onboardingForm">
+                <div class="profile-picture-section">
+                    <div class="profile-picture-preview" id="profilePreview">
+                        <div class="placeholder" id="placeholder">?</div>
+                        <div class="upload-icon">📷</div>
+                    </div>
+                    <input type="file" id="profilePictureInput" class="file-input" accept="image/*">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Click to upload a profile picture
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label for="displayName">Display Name</label>
+                    <input type="text" id="displayName" required minlength="2" maxlength="30" placeholder="Enter your name">
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Complete Setup</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        const profilePreview = document.getElementById('profilePreview');
+        const profilePictureInput = document.getElementById('profilePictureInput');
+        const placeholder = document.getElementById('placeholder');
+        const displayNameInput = document.getElementById('displayName');
+        const onboardingForm = document.getElementById('onboardingForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let selectedFile = null;
+        let imagePreviewUrl = null;
+
+        // Check if user is logged in
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'auth.html';
+            } else {
+                // Load existing profile if any
+                loadExistingProfile(session.user.id);
+            }
+        });
+
+        async function loadExistingProfile(userId) {
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('display_name, profile_picture_url')
+                .eq('id', userId)
+                .single();
+
+            if (profile) {
+                if (profile.display_name) {
+                    displayNameInput.value = profile.display_name;
+                }
+                if (profile.profile_picture_url) {
+                    imagePreviewUrl = profile.profile_picture_url;
+                    profilePreview.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile">`;
+                } else {
+                    // Show initial from name
+                    const initial = profile.display_name ? profile.display_name.charAt(0).toUpperCase() : '?';
+                    placeholder.textContent = initial;
+                }
+            }
+        }
+
+        // Profile picture click
+        profilePreview.addEventListener('click', () => {
+            profilePictureInput.click();
+        });
+
+        // Profile picture change
+        profilePictureInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    showError('Image size must be less than 5MB');
+                    return;
+                }
+
+                selectedFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreviewUrl = e.target.result;
+                    profilePreview.innerHTML = `<img src="${imagePreviewUrl}" alt="Profile"><div class="upload-icon">📷</div>`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Update placeholder when name changes
+        displayNameInput.addEventListener('input', (e) => {
+            if (!imagePreviewUrl && !selectedFile) {
+                const initial = e.target.value.charAt(0).toUpperCase() || '?';
+                placeholder.textContent = initial;
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        // Form submission
+        onboardingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.classList.remove('show');
+
+            const displayName = displayNameInput.value.trim();
+            if (!displayName || displayName.length < 2) {
+                showError('Display name must be at least 2 characters');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    window.location.href = 'auth.html';
+                    return;
+                }
+
+                let profilePictureUrl = null;
+
+                // Upload profile picture if selected
+                if (selectedFile) {
+                    const fileExt = selectedFile.name.split('.').pop();
+                    const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+                    const filePath = `profiles/${fileName}`;
+
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('profile-pictures')
+                        .upload(filePath, selectedFile, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (uploadError) {
+                        // If bucket doesn't exist, create it or use a fallback
+                        console.warn('Upload error:', uploadError);
+                        // For now, we'll just skip the image upload
+                    } else {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('profile-pictures')
+                            .getPublicUrl(filePath);
+                        profilePictureUrl = publicUrl;
+                    }
+                } else if (imagePreviewUrl && imagePreviewUrl.startsWith('http')) {
+                    // Keep existing URL
+                    profilePictureUrl = imagePreviewUrl;
+                }
+
+                // Update profile
+                const { error: updateError } = await supabase
+                    .from('user_profiles')
+                    .update({
+                        display_name: displayName,
+                        profile_picture_url: profilePictureUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', session.user.id);
+
+                if (updateError) {
+                    throw updateError;
+                }
+
+                // Redirect to home
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showError(error.message || 'Failed to save profile. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Complete Setup';
+            }
+        });
+    </script>
+</body>
+</html>
+

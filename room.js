@@ -80,19 +80,44 @@ if (themeToggleBtnRoom) {
     });
 }
 
-// Check for existing session (page refresh)
-(async function checkSession() {
+// Check for authentication and load user profile
+(async function checkAuthAndLoadProfile() {
+    // Check if user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (!session || sessionError) {
+        alert('Please log in to join a room');
+        window.location.href = 'auth.html';
+        return;
+    }
+
+    // Load user profile
+    const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('display_name, profile_picture_url')
+        .eq('id', session.user.id)
+        .single();
+
+    if (profileError || !profile || !profile.display_name) {
+        alert('Please complete your profile first');
+        window.location.href = 'onboarding.html';
+        return;
+    }
+
+    // Set user data from authenticated profile
+    currentUserId = session.user.id;
+    currentUsername = profile.display_name;
+    
+    // Check for existing session (page refresh)
     const sessionKey = `room_session_${roomId}`;
     const existingSession = localStorage.getItem(sessionKey);
 
     if (existingSession) {
         try {
-            const session = JSON.parse(existingSession);
+            const savedSession = JSON.parse(existingSession);
             
-            // Restore session data
-            currentUsername = session.username;
-            currentUserId = session.userId;
-            currentRole = session.role || 'participant';
+            // Restore role from saved session
+            currentRole = savedSession.role || 'participant';
             
             console.log('✅ Restored session:', { username: currentUsername, userId: currentUserId, role: currentRole });
             
@@ -134,33 +159,47 @@ if (themeToggleBtnRoom) {
             console.error('Error restoring session:', error);
             // Clear invalid session
             localStorage.removeItem(sessionKey);
-            // Show username modal
-            usernameModal.style.display = 'flex';
+            // Join room fresh
+            usernameModal.style.display = 'none';
+            await loadRoom();
+            await joinRoom();
+            await updateUIForRole();
+            subscribeToChat();
+            subscribeToParticipants();
         }
     } else {
-        // No existing session, show username modal
-        usernameModal.style.display = 'flex';
+        // No existing session, join as new participant
+        usernameModal.style.display = 'none';
+        await loadRoom();
+        await joinRoom();
+        await updateUIForRole();
+        subscribeToChat();
+        subscribeToParticipants();
     }
 })();
 
-// Handle username submission
+// Handle username submission (legacy - should not be needed with auth)
 usernameForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    currentUsername = usernameInput.value.trim();
+    // This should not be called with authentication, but keep for fallback
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        window.location.href = 'auth.html';
+        return;
+    }
     
-    if (!currentUsername) return;
+    const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('display_name')
+        .eq('id', session.user.id)
+        .single();
     
-    // Generate unique user ID
-    currentUserId = generateUserId();
-    
-    // Set role
-    currentRole = isHost ? 'host' : 'participant';
-    
-    // Save session to localStorage
-    saveSession();
-    
-    // Close modal
-    usernameModal.style.display = 'none';
+    if (profile && profile.display_name) {
+        currentUsername = profile.display_name;
+        currentUserId = session.user.id;
+        currentRole = isHost ? 'host' : 'participant';
+        saveSession();
+        usernameModal.style.display = 'none';
     
         // Show speakers container immediately for all users
         if (speakersContainer) speakersContainer.style.display = 'grid';
@@ -179,9 +218,60 @@ usernameForm.addEventListener('submit', async (e) => {
     subscribeToParticipants();
 });
 
-// Generate unique user ID
+// Generate unique user ID (legacy - not needed with auth)
 function generateUserId() {
     return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Join room function (called after auth check)
+async function joinRoom() {
+    // Set role based on whether user is host
+    currentRole = isHost ? 'host' : 'participant';
+    
+    // Save session
+    saveSession();
+    
+    // Show speakers container immediately for all users
+    if (speakersContainer) speakersContainer.style.display = 'grid';
+    
+    try {
+        // Check if already a participant
+        const { data: existingParticipant } = await supabase
+            .from('room_participants')
+            .select('*')
+            .eq('room_id', roomId)
+            .eq('user_id', currentUserId)
+            .single();
+        
+        if (existingParticipant) {
+            // Already a participant, update role if needed
+            currentRole = existingParticipant.role;
+            console.log('✅ Already a participant, role:', currentRole);
+        } else {
+            // Add as new participant
+            const { error } = await supabase
+                .from('room_participants')
+                .insert([{
+                    room_id: roomId,
+                    user_id: currentUserId,
+                    username: currentUsername,
+                    role: currentRole,
+                    hand_raised: false,
+                    is_speaking: currentRole === 'host',
+                    joined_at: new Date().toISOString()
+                }]);
+        
+            if (error) throw error;
+            console.log('✅ Joined room as', currentRole);
+        }
+        
+        // Load participants list
+        await loadParticipants();
+        
+    } catch (error) {
+        console.error('Error joining room:', error);
+        showNotification('Failed to join room', 'error');
+    }
 }
 
 // Save session to localStorage
@@ -233,29 +323,7 @@ async function loadRoom() {
     }
 }
 
-// Join room (add to participants)
-async function joinRoom() {
-    try {
-        const { error } = await supabase
-            .from('room_participants')
-            .insert([{
-                room_id: roomId,
-                user_id: currentUserId,
-                username: currentUsername,
-                role: currentRole,
-                hand_raised: false,
-                is_speaking: currentRole === 'host',
-                joined_at: new Date().toISOString()
-            }]);
-        
-        if (error) throw error;
-        
-        await loadParticipants();
-        
-    } catch (error) {
-        console.error('Error joining room:', error);
-    }
-}
+// joinRoom function is defined earlier - this duplicate is removed
 
 // Update UI based on role
 async function updateUIForRole() {
