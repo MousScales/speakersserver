@@ -354,14 +354,6 @@ function updateParticipantsPanel() {
         
         let actions = '';
         
-        // Host/Moderator actions (make mod, kick) - NO invite button
-        if (canModerate && !isTargetHost) {
-            if (currentRole === 'host' && participant.role === 'speaker') {
-                actions += `<button class="action-btn" onclick="makeModeratorFunc('${participant.user_id}')">👑 Mod</button>`;
-            }
-            actions += `<button class="action-btn remove" onclick="kickParticipant('${participant.user_id}')">✕ Kick</button>`;
-        }
-        
         // EVERYONE can mute anyone (client-side only, user-specific)
         if (participant.user_id !== currentUserId) {
             const isMuted = mutedParticipants.has(participant.user_id);
@@ -512,59 +504,17 @@ function updateAudienceList() {
     });
 }
 
-// Show participant menu/actions when clicked
+// Show participant menu/actions when clicked - simplified to just mute/unmute
 function showParticipantMenu(participant) {
     const isMe = participant.user_id === currentUserId;
-    const canModerate = (currentRole === 'host' || currentRole === 'moderator') && !isMe;
-    const isTargetHost = participant.role === 'host';
-    
-    // Create menu options
-    const options = [];
     
     if (isMe) {
-        options.push({ label: 'This is you', disabled: true });
-    } else {
-        // Everyone can mute anyone (client-side)
-        options.push({ 
-            label: mutedParticipants.has(participant.user_id) ? '🔊 Unmute' : '🔇 Mute',
-            action: () => toggleMuteParticipant(participant.user_id)
-        });
-        
-        // Host/Mod actions
-        if (canModerate && !isTargetHost) {
-            if (participant.hand_raised && !participant.is_speaking) {
-                options.push({ 
-                    label: '✅ Invite to Speak',
-                    action: () => inviteToSpeak(participant.user_id)
-                });
-            }
-            
-            if (currentRole === 'host' && participant.role === 'speaker') {
-                options.push({ 
-                    label: '👑 Make Moderator',
-                    action: () => makeModeratorFunc(participant.user_id)
-                });
-            }
-            
-            options.push({ 
-                label: '✕ Kick',
-                action: () => kickParticipant(participant.user_id),
-                danger: true
-            });
-        }
+        // Don't show menu for yourself
+        return;
     }
     
-    // Show simple alert for now (can be replaced with a proper modal)
-    if (options.length > 0 && !options[0].disabled) {
-        const optionText = options.map((opt, idx) => `${idx + 1}. ${opt.label}`).join('\n');
-        const choice = prompt(`Actions for ${participant.username}:\n${optionText}\n\nEnter number or cancel:`);
-        if (choice && !isNaN(choice) && parseInt(choice) > 0 && parseInt(choice) <= options.length) {
-            const selectedOption = options[parseInt(choice) - 1];
-            if (selectedOption.action) {
-                selectedOption.action();
-            }
-        }
-    }
+    // Simple toggle mute/unmute on click
+    toggleMuteParticipant(participant.user_id);
 }
 
 // Raise/lower hand
@@ -717,36 +667,7 @@ window.toggleMuteParticipant = function(userId) {
     loadParticipants();
 };
 
-// Make moderator (host only)
-window.makeModeratorFunc = async function(userId) {
-    try {
-        const { error } = await supabase
-            .from('room_participants')
-            .update({ role: 'moderator' })
-            .eq('room_id', roomId)
-            .eq('user_id', userId);
-        
-        if (error) throw error;
-        
-        showNotification('Made moderator', 'success');
-        
-    } catch (error) {
-        console.error('Error making moderator:', error);
-    }
-};
-
-// Kick participant
-window.kickParticipant = async function(userId) {
-    if (!confirm('Are you sure you want to kick this participant?')) return;
-    
-    try {
-        const { error } = await supabase
-            .from('room_participants')
-            .delete()
-            .eq('room_id', roomId)
-            .eq('user_id', userId);
-        
-        if (error) throw error;
+// Make moderator and kick functions removed - simplified interaction menu
         
         showNotification('Participant removed', 'success');
         
