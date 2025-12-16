@@ -47,6 +47,64 @@ if (!roomId) {
     window.location.href = 'index.html';
 }
 
+// Check for existing session (page refresh)
+const sessionKey = `room_session_${roomId}`;
+const existingSession = localStorage.getItem(sessionKey);
+
+if (existingSession) {
+    try {
+        const session = JSON.parse(existingSession);
+        
+        // Restore session data
+        currentUsername = session.username;
+        currentUserId = session.userId;
+        currentRole = session.role || 'participant';
+        
+        console.log('✅ Restored session:', { username: currentUsername, userId: currentUserId, role: currentRole });
+        
+        // Hide modal and rejoin automatically
+        usernameModal.style.display = 'none';
+        
+        // Verify participant still exists in database
+        const { data: existingParticipant } = await supabase
+            .from('room_participants')
+            .select('*')
+            .eq('room_id', roomId)
+            .eq('user_id', currentUserId)
+            .single();
+        
+        if (existingParticipant) {
+            // Update role from database (might have changed)
+            currentRole = existingParticipant.role;
+            
+            // Load room and continue
+            await loadRoom();
+            await updateUIForRole();
+            subscribeToChat();
+            subscribeToParticipants();
+            
+            showNotification('Welcome back!', 'success');
+        } else {
+            // Participant no longer in room, rejoin
+            await loadRoom();
+            await joinRoom();
+            await updateUIForRole();
+            subscribeToChat();
+            subscribeToParticipants();
+        }
+        
+    } catch (error) {
+        console.error('Error restoring session:', error);
+        // Clear invalid session
+        localStorage.removeItem(sessionKey);
+        // Show username modal
+        usernameModal.style.display = 'flex';
+    }
+} else {
+    // No existing session, show username modal
+    usernameModal.style.display = 'flex';
+}
+
 // Handle username submission
 usernameForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -59,6 +117,9 @@ usernameForm.addEventListener('submit', async (e) => {
     
     // Set role
     currentRole = isHost ? 'host' : 'participant';
+    
+    // Save session to localStorage
+    saveSession();
     
     // Close modal
     usernameModal.style.display = 'none';
@@ -80,6 +141,26 @@ usernameForm.addEventListener('submit', async (e) => {
 // Generate unique user ID
 function generateUserId() {
     return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Save session to localStorage
+function saveSession() {
+    const sessionKey = `room_session_${roomId}`;
+    const sessionData = {
+        username: currentUsername,
+        userId: currentUserId,
+        role: currentRole,
+        timestamp: Date.now()
+    };
+    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    console.log('💾 Session saved');
+}
+
+// Clear session from localStorage
+function clearSession() {
+    const sessionKey = `room_session_${roomId}`;
+    localStorage.removeItem(sessionKey);
+    console.log('🗑️ Session cleared');
 }
 
 // Load room information
@@ -550,6 +631,7 @@ function subscribeToParticipants() {
         }, async (payload) => {
             // Check if current user was kicked
             if (payload.eventType === 'DELETE' && payload.old.user_id === currentUserId) {
+                clearSession();
                 alert('You have been removed from the room');
                 window.location.href = 'index.html';
                 return;
@@ -559,6 +641,7 @@ function subscribeToParticipants() {
             if (payload.eventType === 'UPDATE' && payload.new.user_id === currentUserId) {
                 if (payload.new.role !== currentRole) {
                     currentRole = payload.new.role;
+                    saveSession(); // Update saved role
                     updateUIForRole();
                 }
                 if (payload.new.is_speaking && currentRole === 'speaker') {
@@ -612,6 +695,9 @@ async function checkRoomStatus() {
 // Leave room
 async function leaveRoom() {
     try {
+        // Clear session
+        clearSession();
+        
         // Disconnect from LiveKit first
         if (livekitRoom) {
             await disconnectFromLiveKit();
@@ -631,6 +717,7 @@ async function leaveRoom() {
         
     } catch (error) {
         console.error('Error leaving room:', error);
+        clearSession();
         window.location.href = 'index.html';
     }
 }
@@ -741,31 +828,26 @@ document.querySelectorAll('.panel-tab').forEach(tab => {
     });
 });
 
-// Leave room when window closes
-window.addEventListener('beforeunload', async (e) => {
+// Handle page refresh vs actual close
+let isRefreshing = false;
+
+// Detect if it's a refresh (keeps session) vs close (clears session)
+window.addEventListener('beforeunload', (e) => {
+    // Check if user is navigating away or refreshing
+    const navigationEntries = performance.getEntriesByType('navigation');
+    if (navigationEntries.length > 0 && navigationEntries[0].type === 'reload') {
+        isRefreshing = true;
+        console.log('🔄 Page refresh detected - keeping session');
+        return; // Keep session on refresh
+    }
+    
+    // Disconnect LiveKit but keep session for quick rejoin
     if (livekitRoom) {
         livekitRoom.disconnect();
     }
     
-    if (currentUserId && roomId) {
-        // Use sendBeacon for reliable cleanup on page unload
-        const supabaseUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : supabase.supabaseUrl;
-        const supabaseKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : supabase.supabaseKey;
-        
-        // Delete participant
-        navigator.sendBeacon(
-            `${supabaseUrl}/rest/v1/room_participants?room_id=eq.${roomId}&user_id=eq.${currentUserId}`,
-            new Blob([JSON.stringify({})], { type: 'application/json' })
-        );
-        
-        // If host, try to delete room (may not complete if page closes quickly)
-        if (currentRole === 'host') {
-            navigator.sendBeacon(
-                `${supabaseUrl}/rest/v1/rooms?id=eq.${roomId}`,
-                new Blob([JSON.stringify({})], { type: 'application/json' })
-            );
-        }
-    }
+    // Don't clear session immediately - user might refresh
+    // Session will expire naturally or be cleared on explicit leave
 });
 
 // ========== LiveKit Functions ==========
@@ -812,6 +894,13 @@ async function connectToLiveKit(canPublish = true) {
         await livekitRoom.connect(LIVEKIT_URL, token);
         
         console.log('✅ Connected to LiveKit room as', canPublish ? 'SPEAKER' : 'VIEWER');
+        
+        // Safety check - make sure room didn't disconnect
+        if (!livekitRoom || !livekitRoom.localParticipant) {
+            console.error('❌ Room disconnected unexpectedly after connection');
+            return;
+        }
+        
         console.log('Local participant:', livekitRoom.localParticipant.identity);
         console.log('Remote participants:', Array.from(livekitRoom.remoteParticipants.keys()));
         
