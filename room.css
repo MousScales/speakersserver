@@ -220,6 +220,15 @@
 .hand-raised {
     color: #f59e0b;
     font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hand-raise-timer {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 400;
 }
 
 /* Main Room Area */

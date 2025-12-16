@@ -259,9 +259,8 @@ async function updateUIForRole() {
         videoBtn.style.display = 'flex';
         if (screenShareBtn) screenShareBtn.style.display = 'flex';
         
-        if (currentRole === 'moderator' || currentRole === 'host') {
-            participantsBtn.style.display = 'flex';
-        }
+        // Everyone can see participants panel
+        participantsBtn.style.display = 'flex';
         
         videoPlaceholder.style.display = 'none';
         speakersContainer.style.display = 'grid';
@@ -336,7 +335,20 @@ function updateParticipantsPanel() {
         else if (participant.role === 'moderator') roleBadge = '<span class="role-badge moderator">Mod</span>';
         else if (participant.is_speaking) roleBadge = '<span class="role-badge speaker">Speaking</span>';
         
-        let handIcon = participant.hand_raised ? '<span class="hand-raised">✋</span>' : '';
+        let handIcon = '';
+        if (participant.hand_raised) {
+            // Calculate hand raise duration
+            let timerText = '';
+            if (participant.hand_raised_at) {
+                const raisedAt = new Date(participant.hand_raised_at);
+                const now = new Date();
+                const diffMs = now - raisedAt;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffSecs = Math.floor((diffMs % 60000) / 1000);
+                timerText = ` <span class="hand-raise-timer">(${diffMins}:${diffSecs.toString().padStart(2, '0')})</span>`;
+            }
+            handIcon = `<span class="hand-raised">✋${timerText}</span>`;
+        }
         
         let actions = '';
         
@@ -362,6 +374,7 @@ function updateParticipantsPanel() {
             actions = '';
         }
         
+        item.setAttribute('data-user-id', participant.user_id);
         item.innerHTML = `
             <div class="participant-avatar">${initial}</div>
             <div class="participant-info">
@@ -433,14 +446,28 @@ async function toggleHandRaise() {
     }
 }
 
-// Invite to speak (host only)
+// Invite to speak (host only, only if hand is raised)
 window.inviteToSpeak = async function(userId) {
     try {
+        // Check if participant has raised their hand
+        const { data: participant } = await supabase
+            .from('room_participants')
+            .select('hand_raised')
+            .eq('room_id', roomId)
+            .eq('user_id', userId)
+            .single();
+        
+        if (!participant || !participant.hand_raised) {
+            showNotification('Participant must raise their hand first', 'error');
+            return;
+        }
+        
         const { error } = await supabase
             .from('room_participants')
             .update({ 
                 is_speaking: true, 
                 hand_raised: false,
+                hand_raised_at: null,
                 role: 'speaker'
             })
             .eq('room_id', roomId)
