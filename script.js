@@ -30,7 +30,7 @@ tabs.forEach(tab => {
     });
 });
 
-function displayRooms(category = 'all') {
+async function displayRooms(category = 'all') {
     // Clear grid
     roomsGrid.innerHTML = '';
     
