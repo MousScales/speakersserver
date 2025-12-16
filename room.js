@@ -1614,7 +1614,7 @@ function setupParticipantListeners(participant) {
 function updateSpeakingStatus(identity, isSpeaking) {
     // Find participant in our participants array by matching identity
     // LiveKit identity should match user_id
-    const participant = participants.find(p => 
+    let participant = participants.find(p => 
         p.user_id === identity || 
         p.username === identity
     );
