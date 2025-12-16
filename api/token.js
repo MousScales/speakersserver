@@ -1,16 +1,10 @@
 // Vercel Serverless Function for LiveKit Token Generation
-// Updated: Enhanced error logging for debugging
-
-let AccessToken;
-try {
-    const sdk = await import('livekit-server-sdk');
-    AccessToken = sdk.AccessToken;
-    console.log('✅ LiveKit SDK loaded successfully');
-} catch (error) {
-    console.error('❌ Failed to load LiveKit SDK:', error);
-}
+import { AccessToken } from 'livekit-server-sdk';
 
 export default async function handler(req, res) {
+    console.log('🚀 Token endpoint called');
+    console.log('Method:', req.method);
+    console.log('Query:', req.query);
     // Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -82,7 +76,13 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('❌ Error generating token:', error);
-        return res.status(500).json({ error: 'Failed to generate token' });
+        console.error('Error stack:', error.stack);
+        console.error('Error message:', error.message);
+        return res.status(500).json({ 
+            error: 'Failed to generate token',
+            details: error.message,
+            type: error.name
+        });
     }
 }
 
