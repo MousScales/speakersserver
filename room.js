@@ -296,6 +296,9 @@ async function loadParticipants() {
         updateSpeakersList();
         updateAudienceList();
         
+        // Update room active_participants count
+        await updateRoomParticipantCount();
+        
     } catch (error) {
         console.error('Error loading participants:', error);
     }
