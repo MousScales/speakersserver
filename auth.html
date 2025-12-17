@@ -506,10 +506,20 @@
                 return;
             }
             
+            // Get the current origin (handles both localhost and production)
+            const currentOrigin = window.location.origin;
+            const redirectUrl = `${currentOrigin}/auth.html`;
+            
+            console.log('Initiating Google OAuth with redirect:', redirectUrl);
+            
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth.html`
+                    redirectTo: redirectUrl,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    }
                 }
             });
 
@@ -524,6 +534,29 @@
             if (!supabase) {
                 console.error('Supabase client not initialized');
                 return;
+            }
+            
+            // Check if we have hash fragments (Supabase sometimes redirects with #access_token)
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            
+            // If we have an access token in the hash, set the session
+            if (accessToken) {
+                try {
+                    // Set the session from the hash
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: hashParams.get('refresh_token') || ''
+                    });
+                    
+                    if (error) {
+                        console.error('Error setting session:', error);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Error processing OAuth callback:', err);
+                    return;
+                }
             }
             
             const { data: { session }, error } = await supabase.auth.getSession();
@@ -566,9 +599,21 @@
         }
 
         // Check for OAuth callback on page load
+        // Supabase OAuth can return either ?code= or #access_token= in the URL
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        if (code) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const code = urlParams.get('code') || hashParams.get('code');
+        const accessToken = hashParams.get('access_token');
+        
+        // If we have an access token in the hash, we're on the callback page
+        // Extract it and redirect to auth.html properly
+        if (accessToken && window.location.pathname !== '/auth.html' && window.location.pathname !== '/auth.html/') {
+            // We're on the wrong page, redirect to auth.html with the hash
+            window.location.href = `${window.location.origin}/auth.html${window.location.hash}`;
+            return;
+        }
+        
+        if (code || accessToken) {
             // OAuth callback detected, handle it
             handleOAuthCallback();
         }
