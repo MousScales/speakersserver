@@ -439,6 +439,7 @@ async function updateLoginButton() {
     if (typeof supabase === 'undefined' || supabase === null) return; // Supabase not initialized on this page
     
     const { data: { session } } = await supabase.auth.getSession();
+    const settingsBtn = document.getElementById('settingsBtn');
     
     if (session) {
         loginBtn.textContent = 'Logout';
@@ -448,10 +449,18 @@ async function updateLoginButton() {
             await supabase.auth.signOut();
             window.location.reload();
         };
+        // Show settings button when logged in
+        if (settingsBtn) {
+            settingsBtn.style.display = 'inline-block';
+        }
     } else {
         loginBtn.textContent = 'Login';
         loginBtn.href = 'auth.html';
         loginBtn.onclick = null;
+        // Hide settings button when not logged in
+        if (settingsBtn) {
+            settingsBtn.style.display = 'none';
+        }
     }
 }
 
