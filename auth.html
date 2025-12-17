@@ -610,13 +610,12 @@
         if (accessToken && window.location.pathname !== '/auth.html' && window.location.pathname !== '/auth.html/') {
             // We're on the wrong page, redirect to auth.html with the hash
             window.location.href = `${window.location.origin}/auth.html${window.location.hash}`;
-            return;
-        }
-        
-        if (code || accessToken) {
+            // Don't continue executing - the redirect will happen
+        } else if (code || accessToken) {
             // OAuth callback detected, handle it
             handleOAuthCallback();
         }
+        
 
         // Google sign-in buttons
         document.getElementById('googleLoginBtn').addEventListener('click', signInWithGoogle);
