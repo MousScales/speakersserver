@@ -19,9 +19,12 @@
                 <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle theme">
                     <span class="theme-icon">🌙</span>
                 </button>
-            <a href="about.html" class="info-btn">
-                Info
-            </a>
+                <a href="about.html" class="info-btn">
+                    Info
+                </a>
+                <a href="auth.html" class="btn-primary" id="loginBtn" style="text-decoration: none; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                    Login
+                </a>
             </div>
         </div>
     </header>
@@ -39,15 +42,11 @@
                 <!-- Category Tabs -->
                 <div class="tabs">
                     <button class="tab active" data-category="all">All</button>
-                    <button class="tab" data-category="technology">Technology</button>
-                    <button class="tab" data-category="entertainment">Entertainment</button>
-                    <button class="tab" data-category="science">Science</button>
-                    <button class="tab" data-category="politics">Politics</button>
-                    <button class="tab" data-category="sports">Sports</button>
-                    <button class="tab" data-category="lifestyle">Lifestyle</button>
-                    <button class="tab" data-category="education">Education</button>
-                    <button class="tab" data-category="gaming">Gaming</button>
-                    <button class="tab" data-category="general">General</button>
+                    <button class="tab" data-category="popular">Popular</button>
+                    <button class="tab" data-category="new">New</button>
+                    <button class="tab" data-category="debate">Debate</button>
+                    <button class="tab" data-category="hot-takes">Hot Takes</button>
+                    <button class="tab" data-category="chilling">Chilling</button>
                 </div>
 
                 <!-- Rooms Grid -->
@@ -76,9 +75,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="category">Category</label>
-                    <select id="category" name="category" required>
-                        <option value="">Select a category</option>
+                    <label for="category">Category <span style="font-weight: normal; color: var(--text-secondary);">(Optional)</span></label>
+                    <select id="category" name="category">
+                        <option value="">No category</option>
+                        <option value="debate">Debate</option>
+                        <option value="hot-takes">Hot Takes</option>
+                        <option value="chilling">Chilling</option>
                         <option value="technology">Technology</option>
                         <option value="entertainment">Entertainment</option>
                         <option value="science">Science</option>
@@ -89,6 +91,7 @@
                         <option value="gaming">Gaming</option>
                         <option value="general">General</option>
                     </select>
+                    <small class="form-help-text">💡 Adding a category can help users find your room easier</small>
                 </div>
 
                 <div class="form-actions">

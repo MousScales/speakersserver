@@ -4,9 +4,10 @@ const roomId = urlParams.get('id');
 const isHost = urlParams.get('host') === 'true';
 
 // Get DOM elements
-const usernameModal = document.getElementById('usernameModal');
-const usernameForm = document.getElementById('usernameForm');
-const usernameInput = document.getElementById('username');
+// Username modal removed - no longer needed (users are authenticated or anonymous)
+const usernameModal = null; // Removed from HTML
+const usernameForm = null; // Removed from HTML
+const usernameInput = null; // Removed from HTML
 const roomTitle = document.getElementById('roomTitle');
 const roomCategory = document.getElementById('roomCategory');
 const roomRole = document.getElementById('roomRole');
@@ -83,6 +84,8 @@ if (themeToggleBtnRoom) {
 // Check for authentication and load user profile (or use anonymous)
 let isAuthenticated = false;
 (async function checkAuthAndLoadProfile() {
+    // No modal needed - users are automatically authenticated or assigned anonymous name
+    
     // Check if user is authenticated
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
@@ -97,18 +100,21 @@ let isAuthenticated = false;
             .single();
 
         if (profile && !profileError && profile.display_name) {
-            // Set user data from authenticated profile
+            // Set user data from authenticated profile - NO MODAL NEEDED
             currentUserId = session.user.id;
             currentUsername = profile.display_name;
+            console.log('✅ Logged in as:', currentUsername);
         } else {
-            // Profile incomplete, treat as anonymous
-            isAuthenticated = false;
+            // Profile incomplete, redirect to onboarding
+            console.log('⚠️ Profile incomplete, redirecting to onboarding');
+            window.location.href = 'onboarding.html';
+            return;
         }
     }
     
-    // If not authenticated, generate anonymous user
+    // If not authenticated, generate anonymous user (NO MODAL - auto-assign name)
     if (!isAuthenticated) {
-        // Generate anonymous user ID and name
+        // Generate anonymous user ID and name automatically
         const anonymousNumber = await getNextAnonymousNumber();
         currentUserId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         currentUsername = `Anonymous ${anonymousNumber}`;
@@ -128,8 +134,7 @@ let isAuthenticated = false;
             
             console.log('✅ Restored session:', { username: currentUsername, userId: currentUserId, role: currentRole });
             
-            // Hide modal and rejoin automatically
-            usernameModal.style.display = 'none';
+            // Rejoin automatically (no modal needed)
             
         // Show speakers container immediately (host or any role)
         if (speakersContainer) speakersContainer.style.display = 'grid';
@@ -166,8 +171,7 @@ let isAuthenticated = false;
             console.error('Error restoring session:', error);
             // Clear invalid session
             localStorage.removeItem(sessionKey);
-            // Join room fresh
-            usernameModal.style.display = 'none';
+            // Join room fresh (no modal needed)
             await loadRoom();
             await joinRoom();
             await updateUIForRole();
@@ -175,8 +179,7 @@ let isAuthenticated = false;
             subscribeToParticipants();
         }
     } else {
-        // No existing session, join as new participant
-        usernameModal.style.display = 'none';
+        // No existing session, join as new participant (no modal needed)
         await loadRoom();
         await joinRoom();
         await updateUIForRole();
@@ -185,45 +188,7 @@ let isAuthenticated = false;
     }
 })();
 
-// Handle username submission (legacy - should not be needed with auth)
-usernameForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    // This should not be called with authentication, but keep for fallback
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = 'auth.html';
-        return;
-    }
-    
-    const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('display_name')
-        .eq('id', session.user.id)
-        .single();
-    
-    if (profile && profile.display_name) {
-        currentUsername = profile.display_name;
-        currentUserId = session.user.id;
-        currentRole = isHost ? 'host' : 'participant';
-        saveSession();
-        usernameModal.style.display = 'none';
-    
-        // Show speakers container immediately for all users
-        if (speakersContainer) speakersContainer.style.display = 'grid';
-    
-    // Load room data
-    await loadRoom();
-    
-    // Join room
-    await joinRoom();
-    
-    // Update UI based on role
-    updateUIForRole();
-    
-    // Subscribe to updates
-    subscribeToChat();
-    subscribeToParticipants();
-});
+// Username form removed - no longer needed since we handle auth/anonymous automatically
 
 // Generate unique user ID (legacy - not needed with auth)
 function generateUserId() {
