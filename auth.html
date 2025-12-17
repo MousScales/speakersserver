@@ -320,12 +320,18 @@
         const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
         
-        // Initialize Supabase client (use let to avoid redeclaration errors)
-        let supabase;
-        if (typeof window.supabase !== 'undefined') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize Supabase client (use var to make it global and avoid redeclaration errors)
+        // Check if supabase client already exists (from another page)
+        if (typeof supabase === 'undefined' || supabase === null) {
+            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.error('Supabase library not loaded');
+                var supabase = null;
+            }
         } else {
-            console.error('Supabase library not loaded');
+            // Reuse existing supabase client if it exists
+            console.log('Reusing existing Supabase client');
         }
 
         // Theme
