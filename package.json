@@ -5,7 +5,8 @@
   "main": "index.html",
   "scripts": {
     "start": "node token-server.js",
-    "dev": "nodemon token-server.js"
+    "dev": "nodemon token-server.js",
+    "build": "echo 'Static site - no build needed'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.88.0",
