@@ -117,8 +117,17 @@
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const TOKEN_SERVER_URL = isLocal ? 'http://localhost:3001' : window.location.origin + '/api/token';
         
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize Supabase client - make it globally accessible
+        // Note: window.supabase is the library, we need to call createClient on it
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            // Store the library reference before we potentially overwrite window.supabase
+            const supabaseLib = window.supabase;
+            // Create the client and assign to global 'supabase' variable (var makes it global)
+            var supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.error('❌ Supabase library not loaded');
+            var supabase = null; // Declare even if library failed to load
+        }
         
         console.log('✅ Configuration loaded', { environment: isLocal ? 'local' : 'production' });
     </script>

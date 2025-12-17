@@ -436,7 +436,7 @@ function subscribeToRooms() {
 // Update login button based on auth status
 async function updateLoginButton() {
     if (!loginBtn) return;
-    if (typeof supabase === 'undefined') return; // Supabase not initialized on this page
+    if (typeof supabase === 'undefined' || supabase === null) return; // Supabase not initialized on this page
     
     const { data: { session } } = await supabase.auth.getSession();
     
