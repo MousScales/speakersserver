@@ -246,16 +246,28 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
         
         // Initialize Supabase client - check if already exists to avoid redeclaration
-        if (typeof supabase === 'undefined' || supabase === null) {
-            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } else {
-                console.error('Supabase library not loaded');
-                var supabase = null;
+        function initializeSupabase() {
+            // Check if supabase client already exists (from another page)
+            if (typeof supabase !== 'undefined' && supabase !== null) {
+                console.log('Reusing existing Supabase client');
+                return supabase;
             }
-        } else {
-            console.log('Reusing existing Supabase client');
+            
+            // Check if Supabase library is loaded
+            if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+                console.error('Supabase library not loaded yet, retrying...');
+                setTimeout(initializeSupabase, 100);
+                return null;
+            }
+            
+            // Create the client
+            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized');
+            return supabase;
         }
+        
+        // Initialize immediately (will retry if library not ready)
+        var supabase = initializeSupabase();
 
         // Theme
         const savedTheme = localStorage.getItem('theme') || 'light';
@@ -275,16 +287,34 @@
         let currentProfilePictureUrl = null;
 
         // Check if user is logged in
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) {
-                window.location.href = 'auth.html';
-            } else {
-                // Load existing profile
-                loadExistingProfile(session.user.id);
+        function checkAuthAndLoadProfile() {
+            if (!supabase) {
+                console.warn('Supabase client not initialized, retrying...');
+                setTimeout(checkAuthAndLoadProfile, 100);
+                return;
             }
-        });
+            
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (!session) {
+                    window.location.href = 'auth.html';
+                } else {
+                    // Load existing profile
+                    loadExistingProfile(session.user.id);
+                }
+            }).catch(err => {
+                console.error('Error checking session:', err);
+            });
+        }
+        
+        // Start checking auth once Supabase is ready
+        checkAuthAndLoadProfile();
 
         async function loadExistingProfile(userId) {
+            if (!supabase) {
+                console.error('Supabase client not initialized');
+                return;
+            }
+            
             const { data: profile, error } = await supabase
                 .from('user_profiles')
                 .select('display_name, profile_picture_url')
@@ -372,6 +402,13 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Saving...';
 
+            if (!supabase) {
+                showError('Supabase client not initialized. Please refresh the page.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Changes';
+                return;
+            }
+            
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session) {
