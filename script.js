@@ -1,7 +1,6 @@
 // Get modal and main elements
 const modal = document.getElementById('createDiscussionModal');
 const startBtn = document.getElementById('startDiscussionBtn');
-const closeBtn = document.querySelector('.close');
 const cancelBtn = document.getElementById('cancelBtn');
 const discussionForm = document.getElementById('discussionForm');
 const roomsGrid = document.getElementById('roomsGrid');
@@ -113,7 +112,75 @@ async function displayRooms(category = 'all') {
     }
 }
 
-// Open create room page
+// Open modal
+// Multi-step modal state
+let currentStep = 1;
+const totalSteps = 3;
+
+// Step navigation elements
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('submitBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+
+// Initialize modal
+function initModal() {
+    currentStep = 1;
+    updateStepDisplay();
+    discussionForm.reset();
+}
+
+function updateStepDisplay() {
+    // Update step indicators
+    document.querySelectorAll('.step-item').forEach((item, index) => {
+        const stepNum = index + 1;
+        item.classList.remove('active', 'completed');
+        if (stepNum < currentStep) {
+            item.classList.add('completed');
+        } else if (stepNum === currentStep) {
+            item.classList.add('active');
+        }
+    });
+    
+    // Update step content visibility
+    document.querySelectorAll('.step-content').forEach((content, index) => {
+        const stepNum = index + 1;
+        content.classList.toggle('active', stepNum === currentStep);
+    });
+    
+    // Update navigation buttons
+    prevBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
+    nextBtn.style.display = currentStep < totalSteps ? 'inline-block' : 'none';
+    submitBtn.style.display = currentStep === totalSteps ? 'inline-block' : 'none';
+    
+    // Update review section if on step 3
+    if (currentStep === 3) {
+        updateReviewSection();
+    }
+}
+
+function updateReviewSection() {
+    const title = document.getElementById('discussionTitle').value;
+    const description = document.getElementById('discussionDescription').value;
+    const category = document.getElementById('category').value;
+    
+    document.getElementById('reviewTitle').textContent = title || 'Not set';
+    document.getElementById('reviewDescription').textContent = description || 'Not set';
+    
+    const categorySelect = document.getElementById('category');
+    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+    document.getElementById('reviewCategory').textContent = category ? selectedOption.text : 'No category';
+}
+
+function validateStep(step) {
+    if (step === 1) {
+        const title = document.getElementById('discussionTitle').value.trim();
+        const description = document.getElementById('discussionDescription').value.trim();
+        return title.length > 0 && description.length > 0;
+    }
+    return true; // Step 2 and 3 don't require validation
+}
+
 startBtn.addEventListener('click', async () => {
     // Check if user is authenticated
     const { data: { session } } = await supabase.auth.getSession();
@@ -123,33 +190,72 @@ startBtn.addEventListener('click', async () => {
         return;
     }
     
-    window.location.href = 'create-room.html';
+    initModal();
+    modal.style.display = 'block';
 });
 
 // Close modal
-closeBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        initModal();
+    });
+}
 
-cancelBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        initModal();
+    });
+}
 
 // Close modal when clicking outside
 window.addEventListener('click', (event) => {
     if (event.target === modal) {
         modal.style.display = 'none';
+        initModal();
     }
 });
+
+// Next button
+if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+        if (validateStep(currentStep)) {
+            currentStep++;
+            updateStepDisplay();
+        } else {
+            showNotification('Please fill in all required fields', 'error');
+        }
+    });
+}
+
+// Previous button
+if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+        currentStep--;
+        updateStepDisplay();
+    });
+}
 
 // Handle form submission
 discussionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    if (!validateStep(1)) {
+        showNotification('Please fill in all required fields', 'error');
+        currentStep = 1;
+        updateStepDisplay();
+        return;
+    }
+    
     // Get form values
     const title = document.getElementById('discussionTitle').value;
     const description = document.getElementById('discussionDescription').value;
     const category = document.getElementById('category').value || 'general'; // Default to 'general' if empty
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
     
     try {
         // Insert into Supabase
@@ -170,6 +276,7 @@ discussionForm.addEventListener('submit', async (e) => {
         // Close modal and reset form
         modal.style.display = 'none';
         discussionForm.reset();
+        initModal();
         
         // Automatically join the room as host
         if (data && data[0]) {
@@ -179,6 +286,8 @@ discussionForm.addEventListener('submit', async (e) => {
     } catch (error) {
         console.error('Error creating room:', error);
         showNotification('Failed to create room. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Room';
     }
 });
 
