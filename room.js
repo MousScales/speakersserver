@@ -441,6 +441,31 @@ async function loadParticipants() {
         
         participants = data || [];
         
+        // Fetch profile pictures for logged-in users
+        const userIds = participants
+            .filter(p => !p.user_id.startsWith('anonymous_'))
+            .map(p => p.user_id);
+        
+        let profilePictures = {};
+        if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+                .from('user_profiles')
+                .select('id, profile_picture_url, display_name')
+                .in('id', userIds);
+            
+            if (profilesData) {
+                profilesData.forEach(profile => {
+                    profilePictures[profile.id] = profile.profile_picture_url;
+                });
+            }
+        }
+        
+        // Add profile pictures to participants
+        participants = participants.map(p => ({
+            ...p,
+            profile_picture_url: profilePictures[p.user_id] || null
+        }));
+        
         // Update counts immediately
         updateAllCounts();
         
@@ -556,8 +581,22 @@ function updateParticipantsPanel() {
         }
         
         item.setAttribute('data-user-id', participant.user_id);
+        
+        // Create avatar with profile picture or initial
+        let avatarHTML = '';
+        if (participant.profile_picture_url) {
+            const safeUrl = escapeHtml(participant.profile_picture_url);
+            avatarHTML = `
+                <div class="participant-avatar" style="background-image: url('${safeUrl}'); background-size: cover; background-position: center;">
+                    <span style="display: none;">${initial}</span>
+                </div>
+            `;
+        } else {
+            avatarHTML = `<div class="participant-avatar">${initial}</div>`;
+        }
+        
         item.innerHTML = `
-            <div class="participant-avatar">${initial}</div>
+            ${avatarHTML}
             <div class="participant-info">
                 <div class="participant-name">
                     ${escapeHtml(participant.username)}${isMe ? ' (You)' : ''}
@@ -677,7 +716,19 @@ function createAudienceMemberElement(member, isRaisedHand) {
     const avatar = document.createElement('div');
     avatar.className = 'audience-member-avatar';
     const initial = member.username.charAt(0).toUpperCase();
-    avatar.textContent = initial;
+    
+    // Add profile picture if available
+    if (member.profile_picture_url) {
+        avatar.style.backgroundImage = `url('${member.profile_picture_url}')`;
+        avatar.style.backgroundSize = 'cover';
+        avatar.style.backgroundPosition = 'center';
+        const initialSpan = document.createElement('span');
+        initialSpan.style.display = 'none';
+        initialSpan.textContent = initial;
+        avatar.appendChild(initialSpan);
+    } else {
+        avatar.textContent = initial;
+    }
     
     // Add role badge if host or moderator
     if (member.role === 'host') {
@@ -2287,7 +2338,23 @@ function createParticipantTile(identity, participantName) {
     avatar.className = 'avatar';
     // Get first letter of username (handle cases where name might be user ID)
     const firstLetter = participantName.split('_')[0].charAt(0).toUpperCase() || '?';
-    avatar.textContent = firstLetter;
+    
+    // Find participant to get profile picture
+    const participant = participants.find(p => {
+        return p.user_id === identity || p.username === participantName;
+    });
+    
+    if (participant && participant.profile_picture_url) {
+        avatar.style.backgroundImage = `url('${participant.profile_picture_url}')`;
+        avatar.style.backgroundSize = 'cover';
+        avatar.style.backgroundPosition = 'center';
+        const initialSpan = document.createElement('span');
+        initialSpan.style.display = 'none';
+        initialSpan.textContent = firstLetter;
+        avatar.appendChild(initialSpan);
+    } else {
+        avatar.textContent = firstLetter;
+    }
     
     placeholder.appendChild(avatar);
     
