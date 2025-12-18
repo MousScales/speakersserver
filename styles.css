@@ -1127,16 +1127,16 @@ header .container {
     display: block;
 }
 
-/* Form Question/Answer Layout */
+/* Form Question/Answer Layout - Floating separately like notes */
 .form-question-group {
     margin-bottom: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    position: relative;
 }
 
 .form-question {
-    flex-shrink: 0;
+    position: relative;
+    margin-bottom: 0.75rem;
+    z-index: 1;
 }
 
 .form-question label {
@@ -1144,14 +1144,23 @@ header .container {
     font-weight: 600;
     color: var(--text-color);
     display: block;
-    margin-bottom: 0;
+    padding: 0.75rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s;
+    cursor: default;
+}
+
+.form-question label:hover {
+    background: var(--bg-secondary);
+    transform: translateX(4px);
 }
 
 .form-answer {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    position: relative;
+    z-index: 0;
+    margin-top: 0.5rem;
 }
 
 .form-answer input,
