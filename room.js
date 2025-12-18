@@ -206,7 +206,9 @@ let isAuthenticated = false;
         await updateUIForRole();
         subscribeToChat();
         subscribeToParticipants();
-        
+    }
+})();
+
 // Show meeting ended modal
 function showMeetingEndedModal() {
     if (meetingEndedModal) {
