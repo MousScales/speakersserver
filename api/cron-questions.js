@@ -1,4 +1,4 @@
-// Vercel Cron Job - Runs daily at 9am UTC to generate controversial questions
+// Vercel Cron Job - Runs daily at 9am EST (14:00 UTC) to generate controversial questions
 // This endpoint is called by Vercel's cron system
 
 module.exports = async (req, res) => {
