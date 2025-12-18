@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.88.0",
-    "livekit-server-sdk": "2.6.1"
+    "livekit-server-sdk": "2.6.1",
+    "stripe": "^14.0.0"
   },
   "devDependencies": {
     "cors": "^2.8.5",

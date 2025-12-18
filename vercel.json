@@ -10,7 +10,7 @@
   ],
   "crons": [
     {
-      "path": "/api/cron-news",
+      "path": "/api/cron-questions",
       "schedule": "0 9 * * *"
     }
   ]

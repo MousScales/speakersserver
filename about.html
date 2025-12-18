@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="animations.css">
     <style>
         .about-container {
             max-width: 1200px;
@@ -30,19 +31,22 @@
 
         .about-text h1 {
             font-family: 'Poppins', sans-serif;
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 700;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             color: var(--text-color);
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
         }
 
         .about-text p {
             font-family: 'Inter', sans-serif;
-            font-size: 1.125rem;
-            line-height: 1.8;
-            color: var(--text-secondary);
+            font-size: 1.25rem;
+            line-height: 1.9;
+            color: var(--text-color);
             margin-bottom: 2rem;
+            font-weight: 400;
+            letter-spacing: 0.01em;
         }
 
         .about-image-container {
@@ -123,11 +127,14 @@
 </head>
 <body>
     <header>
-        <div class="container">
+        <div class="container header-container">
             <div class="logo">
-                <h1>Speakers Server</h1>
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <h1>Speakers Server <span class="header-dash">-</span> <span class="header-quote-text">where opinions meet conversation</span></h1>
+                </a>
             </div>
             <div class="header-actions">
+                <a href="#" class="donate-btn" id="donateBtn">Donate</a>
                 <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle theme">
                     <span class="theme-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -135,13 +142,18 @@
                         </svg>
                     </span>
                 </button>
+                <a href="auth.html" class="btn-primary" id="loginBtn" style="text-decoration: none; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                    Login
+                </a>
+                <a href="settings.html" id="profilePictureBtn" class="profile-picture-header" style="display: none;">
+                    <img id="headerProfilePicture" src="" alt="Profile" style="display: none;">
+                    <span id="headerProfileInitial" style="display: none;"></span>
+                </a>
             </div>
         </div>
     </header>
 
     <div class="about-container">
-        <a href="index.html" class="back-button">← Back to Home</a>
-        
         <div class="about-content">
             <div class="about-text">
                 <h1>About Me</h1>
@@ -164,36 +176,81 @@
         </div>
     </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Speakers Server. All rights reserved.</p>
+    <!-- Donate Panel (slides in from right) -->
+    <div class="donate-panel-overlay" id="donatePanelOverlay" style="display: none;">
+        <div class="donate-panel" id="donatePanel">
+            <div class="donate-panel-header">
+                <h2>Support Speakers Server</h2>
+                <button class="donate-panel-close" id="donatePanelClose">&times;</button>
+            </div>
+            
+            <div class="donate-panel-content">
+                <!-- Donation Form -->
+                <div class="donate-form-section">
+                    <h3>Make a Donation</h3>
+                    <div class="donate-amount-group">
+                        <label for="donateAmount">Amount (USD)</label>
+                        <div class="donate-amount-input-wrapper">
+                            <span class="donate-currency-display" id="donateAmountDisplay">$0</span>
+                            <input type="text" id="donateAmount" class="donate-amount-input" placeholder="0" inputmode="numeric" pattern="[0-9]*" required autocomplete="off">
+                        </div>
+                        <div class="donate-quick-amounts">
+                            <button type="button" class="donate-quick-btn" data-amount="10">$10</button>
+                            <button type="button" class="donate-quick-btn" data-amount="50">$50</button>
+                            <button type="button" class="donate-quick-btn" data-amount="100">$100</button>
+                            <button type="button" class="donate-quick-btn" data-amount="500">$500</button>
+                        </div>
+                    </div>
+                    <div class="donate-payment-info">
+                        <p class="donate-info-text">Every cent helps to keep your voice heard</p>
+                    </div>
+                    <!-- Stripe Card Element -->
+                    <div id="card-element" class="stripe-card-element">
+                        <!-- Stripe Elements will create form elements here -->
+                    </div>
+                    <div id="card-errors" class="stripe-card-errors" role="alert"></div>
+                    <button type="button" class="donate-submit-btn" id="donateSubmitBtn">Donate</button>
+                </div>
+                
+                <!-- Top Donators Leaderboard -->
+                <div class="donate-leaderboard-section">
+                    <h3>Top Donators</h3>
+                    <div class="donate-leaderboard" id="donateLeaderboard">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 1rem;">Loading...</p>
+                    </div>
+                </div>
+                
+                <!-- Recent Donations -->
+                <div class="donate-recent-section">
+                    <h3>Recent Donations</h3>
+                    <div class="donate-recent-list" id="donateRecentList">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 1rem;">Loading...</p>
+                    </div>
+                </div>
+            </div>
         </div>
-    </footer>
+    </div>
 
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Inline Configuration -->
     <script>
-        // Theme toggle functionality
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        const themeIcon = document.querySelector('.theme-icon');
-        const html = document.documentElement;
-
-        // Load saved theme
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        html.setAttribute('data-theme', savedTheme);
-        themeIcon.innerHTML = savedTheme === 'dark' 
-            ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
-            : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
-
-        // Toggle theme
-        themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            themeIcon.innerHTML = newTheme === 'dark' 
-                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
-                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
-            localStorage.setItem('theme', newTheme);
-        });
+        const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
+        
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            const supabaseLib = window.supabase;
+            var supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.error('❌ Supabase library not loaded');
+            var supabase = null;
+        }
     </script>
+    
+    <script src="script.js"></script>
 </body>
 </html>
 

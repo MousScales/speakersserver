@@ -1,21 +1,75 @@
-// Get modal and main elements
-const modal = document.getElementById('createDiscussionModal');
+// Get form elements
+const createForm = document.getElementById('createConversationForm');
 let startBtn = null; // Will be set dynamically when button is created
-const cancelBtn = document.getElementById('cancelBtn');
 const discussionForm = document.getElementById('discussionForm');
 const loginBtn = document.getElementById('loginBtn');
+
+// Conversation form state
+let currentStep = 1;
+const totalSteps = 3;
 
 // Function to setup start button event listener
 function setupStartButton() {
     startBtn = document.getElementById('startDiscussionBtn');
     if (startBtn && !startBtn.hasAttribute('data-listener-attached')) {
         startBtn.setAttribute('data-listener-attached', 'true');
-        startBtn.addEventListener('click', () => {
-            if (modal) {
-                modal.style.display = 'flex';
-                initModal();
+        startBtn.addEventListener('click', async () => {
+            // Check if user is authenticated
+            if (typeof supabase !== 'undefined' && supabase) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    showNotification('Please log in to create a room', 'error');
+                    window.location.href = 'auth.html';
+                    return;
+                }
+            }
+            
+            if (createForm) {
+                currentStep = 1;
+                updateStepDisplay();
+                createForm.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
             }
         });
+    }
+}
+
+// Update step display
+function updateStepDisplay() {
+    const steps = document.querySelectorAll('.conversation-step');
+    const dots = document.querySelectorAll('.pagination-dot');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    steps.forEach((step, index) => {
+        if (index + 1 === currentStep) {
+            step.classList.add('active');
+        } else {
+            step.classList.remove('active');
+        }
+    });
+    
+    dots.forEach((dot, index) => {
+        if (index + 1 === currentStep) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+    
+    // Show submit button only on last step
+    if (submitBtn) {
+        submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
+    }
+}
+
+// Close form
+function closeConversationForm() {
+    if (createForm) {
+        createForm.style.display = 'none';
+        document.body.style.overflow = '';
+        discussionForm.reset();
+        currentStep = 1;
+        updateStepDisplay();
     }
 }
 
@@ -157,140 +211,141 @@ function showCategoryView(categoryKey, categoryName) {
     });
 }
 
-// Open modal
-// Multi-step modal state
-let currentStep = 1;
-const totalSteps = 3;
-
-// Step navigation elements
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-const submitBtn = document.getElementById('submitBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-
-// Initialize modal
-function initModal() {
-    currentStep = 1;
-    updateStepDisplay();
-    discussionForm.reset();
-}
-
-function updateStepDisplay() {
-    // Update step indicators
-    document.querySelectorAll('.step-item').forEach((item, index) => {
-        const stepNum = index + 1;
-        item.classList.remove('active', 'completed');
-        if (stepNum < currentStep) {
-            item.classList.add('completed');
-        } else if (stepNum === currentStep) {
-            item.classList.add('active');
-        }
+// Handle pagination dots and auto-advance
+document.addEventListener('DOMContentLoaded', () => {
+    const dots = document.querySelectorAll('.pagination-dot');
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                currentStep = index + 1;
+                updateStepDisplay();
+            }
+        });
     });
     
-    // Update step content visibility
-    document.querySelectorAll('.step-content').forEach((content, index) => {
-        const stepNum = index + 1;
-        content.classList.toggle('active', stepNum === currentStep);
-    });
+    // Auto-advance on input (when user types and presses Enter or clicks outside)
+    const titleInput = document.getElementById('discussionTitle');
+    const descriptionInput = document.getElementById('discussionDescription');
     
-    // Update navigation buttons
-    prevBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
-    nextBtn.style.display = currentStep < totalSteps ? 'inline-block' : 'none';
-    submitBtn.style.display = currentStep === totalSteps ? 'inline-block' : 'none';
-    
-    // Update review section if on step 3
-    if (currentStep === 3) {
-        updateReviewSection();
+    if (titleInput) {
+        titleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && currentStep === 1 && titleInput.value.trim()) {
+                e.preventDefault();
+                if (validateStep(1)) {
+                    currentStep = 2;
+                    updateStepDisplay();
+                    descriptionInput?.focus();
+                }
+            }
+        });
+        
+        titleInput.addEventListener('blur', () => {
+            if (titleInput.value.trim() && validateStep(1)) {
+                setTimeout(() => {
+                    if (currentStep === 1) {
+                        currentStep = 2;
+                        updateStepDisplay();
+                    }
+                }, 500);
+            }
+        });
     }
-}
-
-function updateReviewSection() {
-    const title = document.getElementById('discussionTitle').value;
-    const description = document.getElementById('discussionDescription').value;
-    const category = document.getElementById('category').value;
     
-    document.getElementById('reviewTitle').textContent = title || 'Not set';
-    document.getElementById('reviewDescription').textContent = description || 'Not set';
+    if (descriptionInput) {
+        descriptionInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey && currentStep === 2 && descriptionInput.value.trim()) {
+                e.preventDefault();
+                if (validateStep(2)) {
+                    currentStep = 3;
+                    updateStepDisplay();
+                }
+            }
+        });
+        
+        descriptionInput.addEventListener('blur', () => {
+            if (descriptionInput.value.trim() && validateStep(2)) {
+                setTimeout(() => {
+                    if (currentStep === 2) {
+                        currentStep = 3;
+                        updateStepDisplay();
+                    }
+                }, 500);
+            }
+        });
+    }
     
     const categorySelect = document.getElementById('category');
-    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-    document.getElementById('reviewCategory').textContent = category ? selectedOption.text : 'No category';
-}
-
-function validateStep(step) {
-    if (step === 1) {
-        const title = document.getElementById('discussionTitle').value.trim();
-        const description = document.getElementById('discussionDescription').value.trim();
-        return title.length > 0 && description.length > 0;
-    }
-    return true; // Step 2 and 3 don't require validation
-}
-
-// Setup start button event listener (if button exists in HTML)
-if (startBtn) {
-    startBtn.addEventListener('click', async () => {
-        // Check if user is authenticated
-        if (typeof supabase !== 'undefined' && supabase) {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                showNotification('Please log in to create a room', 'error');
-                window.location.href = 'auth.html';
-                return;
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => {
+            // Auto-advance after selecting category
+            if (currentStep === 3) {
+                // Already on last step, just ensure submit button is visible
+                updateStepDisplay();
             }
-        }
-        
-        if (modal) {
-            initModal();
-            modal.style.display = 'flex';
-        }
-    });
-}
-
-// Close modal
-if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        initModal();
-    });
-}
-
-if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        initModal();
-    });
-}
-
-// Close modal when clicking outside
-window.addEventListener('click', (event) => {
-    if (event.target === modal) {
-        modal.style.display = 'none';
-        initModal();
+        });
     }
 });
 
-// Next button
-if (nextBtn) {
-    nextBtn.addEventListener('click', () => {
-        if (validateStep(currentStep)) {
-            currentStep++;
-            updateStepDisplay();
-        } else {
-            showNotification('Please fill in all required fields', 'error');
+// Close form when clicking outside
+if (createForm) {
+    createForm.addEventListener('click', (e) => {
+        if (e.target === createForm) {
+            closeConversationForm();
         }
     });
 }
 
-// Previous button
-if (prevBtn) {
-    prevBtn.addEventListener('click', () => {
-        currentStep--;
-        updateStepDisplay();
-    });
-}
+// Navigation arrow buttons
+document.addEventListener('DOMContentLoaded', () => {
+    // Step 1: Next button
+    const nextStepBtn1 = document.getElementById('nextStepBtn1');
+    if (nextStepBtn1) {
+        nextStepBtn1.addEventListener('click', () => {
+            if (validateStep(1)) {
+                currentStep = 2;
+                updateStepDisplay();
+            } else {
+                showNotification('Please fill in all required fields', 'error');
+            }
+        });
+    }
+
+    // Step 2: Previous and Next buttons
+    const prevStepBtn2 = document.getElementById('prevStepBtn2');
+    const nextStepBtn2 = document.getElementById('nextStepBtn2');
+    
+    if (prevStepBtn2) {
+        prevStepBtn2.addEventListener('click', () => {
+            currentStep = 1;
+            updateStepDisplay();
+        });
+    }
+    
+    if (nextStepBtn2) {
+        nextStepBtn2.addEventListener('click', () => {
+            if (validateStep(2)) {
+                currentStep = 3;
+                updateStepDisplay();
+            } else {
+                showNotification('Please fill in all required fields', 'error');
+            }
+        });
+    }
+
+    // Step 3: Previous button
+    const prevStepBtn3 = document.getElementById('prevStepBtn3');
+    if (prevStepBtn3) {
+        prevStepBtn3.addEventListener('click', () => {
+            currentStep = 2;
+            updateStepDisplay();
+        });
+    }
+});
+
 
 // Handle form submission
-discussionForm.addEventListener('submit', async (e) => {
+if (discussionForm) {
+    discussionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     // Check if user is authenticated
@@ -307,9 +362,15 @@ discussionForm.addEventListener('submit', async (e) => {
         return;
     }
     
-    if (!validateStep(1)) {
+    // Validate all steps
+    if (!validateStep(1) || !validateStep(2)) {
         showNotification('Please fill in all required fields', 'error');
-        currentStep = 1;
+        // Go to first invalid step
+        if (!validateStep(1)) {
+            currentStep = 1;
+        } else if (!validateStep(2)) {
+            currentStep = 2;
+        }
         updateStepDisplay();
         return;
     }
@@ -320,8 +381,11 @@ discussionForm.addEventListener('submit', async (e) => {
     const category = document.getElementById('category').value || 'general'; // Default to 'general' if empty
     
     // Disable submit button
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating...';
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Starting conversation...';
+    }
     
     try {
         // Insert into Supabase
@@ -339,10 +403,8 @@ discussionForm.addEventListener('submit', async (e) => {
         
         if (error) throw error;
         
-        // Close modal and reset form
-        modal.style.display = 'none';
-        discussionForm.reset();
-        initModal();
+        // Close form
+        closeConversationForm();
         
         // Automatically join the room as host
         if (data && data[0]) {
@@ -352,10 +414,14 @@ discussionForm.addEventListener('submit', async (e) => {
     } catch (error) {
         console.error('Error creating room:', error);
         showNotification('Failed to create room. Please try again.', 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Room';
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Start your conversation';
+        }
     }
-});
+    });
+}
 
 // Helper function to capitalize first letter
 function capitalizeFirst(str) {
@@ -556,86 +622,179 @@ async function createRoomCard(room) {
 let newsItems = [];
 let currentNewsSlide = 0;
 
-// Fetch news from Supabase
-async function fetchNews() {
+// Fetch controversial questions from Supabase
+async function fetchQuestions() {
     try {
         // Check if supabase is available
         if (typeof supabase === 'undefined' || !supabase) {
-            console.warn('Supabase client not available, using placeholder news');
-            newsItems = [
-                {
-                    title: "News temporarily unavailable",
-                    description: "Initializing news system...",
-                    category: "general"
-                }
-            ];
+            console.warn('Supabase client not available, using placeholder questions');
+            newsItems = getDefaultQuestions();
             return;
         }
 
-        const { data, error } = await supabase
-            .from('news_items')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(10);
+        // Retry logic for connection issues
+        let data, error;
+        let retries = 3;
+        let lastError;
         
-        if (error) {
-            console.error('Supabase error fetching news:', error);
-            throw error;
+        for (let i = 0; i < retries; i++) {
+            try {
+                const result = await supabase
+                    .from('controversial_questions')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                data = result.data;
+                error = result.error;
+                
+                if (!error) break; // Success, exit retry loop
+                
+                lastError = error;
+                if (i < retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            } catch (err) {
+                lastError = err;
+                if (i < retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
         }
         
-        console.log('News data fetched:', data);
+        if (error || lastError) {
+            console.error('Supabase error fetching questions after retries:', error || lastError);
+            // If table doesn't exist, try to generate questions
+            if (error && (error.code === 'PGRST116' || error.message.includes('does not exist'))) {
+                console.log('Questions table not found, generating questions...');
+                try {
+                    const response = await fetch('/api/generate-questions', {
+                        method: 'POST'
+                    });
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.questions && result.questions.length > 0) {
+                            newsItems = result.questions.map(item => ({
+                                title: item.question,
+                                description: item.question,
+                                category: item.category || 'general',
+                                sourceUrl: null,
+                                imageUrl: null
+                            }));
+                            console.log('Questions generated and loaded:', newsItems.length);
+                            return;
+                        }
+                    }
+                } catch (genError) {
+                    console.error('Error generating questions:', genError);
+                }
+            }
+            throw error || lastError;
+        }
+        
+        console.log('Questions data fetched:', data);
         
         if (data && data.length > 0) {
             newsItems = data.map(item => ({
-                title: item.title,
-                description: item.description,
+                title: item.question,
+                description: item.question,
                 category: item.category || 'general',
-                sourceUrl: item.source_url || null,
-                imageUrl: item.image_url || null
+                sourceUrl: null,
+                imageUrl: null
             }));
-            console.log('News items loaded:', newsItems.length);
+            console.log('Questions loaded:', newsItems.length);
         } else {
-            // No news in database - show message to trigger fetch
-            console.log('No news items found in database');
-            newsItems = [
-                {
-                    title: "No news available yet",
-                    description: "News will be updated daily at 9am. You can manually trigger a refresh by calling the API.",
-                    category: "general",
-                    sourceUrl: null
+            // No questions in database - trigger generation
+            console.log('No questions found, generating...');
+            try {
+                const response = await fetch('/api/generate-questions', {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.questions && result.questions.length > 0) {
+                        newsItems = result.questions.map(item => ({
+                            title: item.question,
+                            description: item.question,
+                            category: item.category || 'general',
+                            sourceUrl: null,
+                            imageUrl: null
+                        }));
+                        console.log('Questions generated and loaded:', newsItems.length);
+                    } else {
+                        newsItems = getDefaultQuestions();
+                    }
+                } else {
+                    newsItems = getDefaultQuestions();
                 }
-            ];
+            } catch (genError) {
+                console.error('Error generating questions:', genError);
+                newsItems = getDefaultQuestions();
+            }
         }
     } catch (error) {
-        console.error('Error fetching news:', error);
-        // Fallback to placeholder on error
-        newsItems = [
-            {
-                title: "News temporarily unavailable",
-                description: `Error: ${error.message || 'Unable to load news'}`,
-                category: "general",
-                sourceUrl: null
-            }
-        ];
+        console.error('Error fetching questions:', error);
+        // Fallback to default questions
+        newsItems = getDefaultQuestions();
     }
 }
 
-// Initialize news slideshow
-async function initNewsSlideshow() {
+function getDefaultQuestions() {
+    return [
+        {
+            title: "Should religious beliefs influence public policy decisions?",
+            description: "Should religious beliefs influence public policy decisions?",
+            category: "religion",
+            sourceUrl: null,
+            imageUrl: null
+        },
+        {
+            title: "How do the core beliefs of Islam and Christianity differ, and which offers a better path to salvation?",
+            description: "How do the core beliefs of Islam and Christianity differ, and which offers a better path to salvation?",
+            category: "religion",
+            sourceUrl: null,
+            imageUrl: null
+        },
+        {
+            title: "Is universal healthcare a fundamental right or a government overreach?",
+            description: "Is universal healthcare a fundamental right or a government overreach?",
+            category: "politics",
+            sourceUrl: null,
+            imageUrl: null
+        },
+        {
+            title: "Do different interpretations of religious texts (like the Bible vs Quran) lead to fundamentally different moral frameworks?",
+            description: "Do different interpretations of religious texts (like the Bible vs Quran) lead to fundamentally different moral frameworks?",
+            category: "religion",
+            sourceUrl: null,
+            imageUrl: null
+        },
+        {
+            title: "Should social media platforms have the right to censor political content?",
+            description: "Should social media platforms have the right to censor political content?",
+            category: "politics",
+            sourceUrl: null,
+            imageUrl: null
+        }
+    ];
+}
+
+// Initialize questions slideshow
+async function initQuestionsSlideshow() {
     const slideshow = document.getElementById('newsSlideshow');
     if (!slideshow) {
-        console.warn('News slideshow element not found');
+        console.warn('Questions slideshow element not found');
         return;
     }
     
     // Show loading state
-    slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading today\'s news...</p>';
+    slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading today\'s questions...</p>';
     
-    // Fetch news from database
-    await fetchNews();
+    // Fetch questions from database
+    await fetchQuestions();
     
     if (newsItems.length === 0) {
-        slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No news available</p>';
+        slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No questions available</p>';
         return;
     }
     
@@ -663,8 +822,7 @@ async function initNewsSlideshow() {
             <div class="news-slide-overlay"></div>
             <div class="news-slide-content">
                 <h3 class="news-slide-title">${escapeHtml(news.title)}</h3>
-                <p class="news-slide-description">${escapeHtml(news.description)}</p>
-                ${news.sourceUrl ? `<a href="${news.sourceUrl}" target="_blank" rel="noopener noreferrer" class="news-slide-link">Read more →</a>` : ''}
+                <p class="news-slide-description" style="font-style: italic; opacity: 0.9;">Join the conversation and share your perspective</p>
             </div>
         `;
         slidesContainer.appendChild(slide);
@@ -712,26 +870,74 @@ function goToNewsSlide(index) {
 // Load rooms from Supabase
 async function loadRooms() {
     try {
-        const { data, error } = await supabase
-            .from('rooms')
-            .select('*')
-            .order('created_at', { ascending: false });
+        // Check if supabase is available
+        if (!supabase) {
+            console.warn('Supabase not initialized, using empty rooms array');
+            allRooms = [];
+            displayRoomsByCategory();
+            return;
+        }
         
-        if (error) throw error;
+        // Retry logic for connection issues
+        let data, error;
+        let retries = 3;
+        let lastError;
         
-        allRooms = data;
+        for (let i = 0; i < retries; i++) {
+            try {
+                const result = await supabase
+                    .from('rooms')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                data = result.data;
+                error = result.error;
+                
+                if (!error) break; // Success, exit retry loop
+                
+                lastError = error;
+                if (i < retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            } catch (err) {
+                lastError = err;
+                if (i < retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+        
+        if (error || lastError) {
+            throw error || lastError;
+        }
+        
+        allRooms = data || [];
         displayRoomsByCategory();
         
     } catch (error) {
         console.error('Error loading rooms:', error);
-        showNotification('Failed to load rooms.', 'error');
+        // Use empty array on error so app doesn't break
+        allRooms = [];
+        displayRoomsByCategory();
+        
+        // Only show notification if it's not a connection error (to avoid spam)
+        const errorMsg = error?.message || String(error);
+        if (!errorMsg.includes('CONNECTION') && !errorMsg.includes('ERR_CONNECTION')) {
+            showNotification('Failed to load rooms. Please refresh the page.', 'error');
+        }
     }
 }
 
 // Subscribe to real-time changes
 function subscribeToRooms() {
-    supabase
-        .channel('rooms_channel')
+    if (!supabase) {
+        console.warn('Supabase not initialized, skipping real-time subscription');
+        return;
+    }
+    
+    try {
+        supabase
+            .channel('rooms_channel')
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
@@ -774,6 +980,9 @@ function subscribeToRooms() {
                 console.error('❌ Room subscription error:', err);
             }
         });
+    } catch (error) {
+        console.error('Error setting up real-time subscription:', error);
+    }
 }
 
 // Update login button and profile picture based on auth status
@@ -833,11 +1042,500 @@ async function updateLoginButton() {
     }
 }
 
+// Donate panel functionality
+const donateBtn = document.getElementById('donateBtn');
+const donatePanelOverlay = document.getElementById('donatePanelOverlay');
+const donatePanelClose = document.getElementById('donatePanelClose');
+const donateSubmitBtn = document.getElementById('donateSubmitBtn');
+const donateAmountInput = document.getElementById('donateAmount');
+const donateAmountDisplay = document.getElementById('donateAmountDisplay');
+const donateQuickBtns = document.querySelectorAll('.donate-quick-btn');
+
+// Stripe Elements
+let stripe = null;
+let cardElement = null;
+let elements = null;
+
+// Initialize amount display
+if (donateAmountDisplay) {
+    donateAmountDisplay.textContent = '$0';
+}
+if (donateAmountInput) {
+    donateAmountInput.value = '$';
+    donateAmountInput.placeholder = '$0';
+    // Ensure input only accepts numbers
+    donateAmountInput.setAttribute('type', 'text');
+}
+
+// Initialize Stripe
+async function initializeStripe() {
+    // Get publishable key - in production, get this from your backend
+    const stripePublishableKey = 'pk_live_51SE0RVRzY93579Xl7RUF0sSnvlFTaisVn7yay1dcgpy6QVMrjkOnR35qONxlxv1XHLeosVpNmaJvvJIkgJTp6JEb00ePj10p6u';
+    
+    if (typeof Stripe !== 'undefined' && stripePublishableKey) {
+        stripe = Stripe(stripePublishableKey);
+        elements = stripe.elements({
+            // Disable automatic payment methods filling for localhost/HTTP
+            // This will work fine in production with HTTPS
+            appearance: {
+                theme: 'stripe',
+                variables: {
+                    colorPrimary: getComputedStyle(document.documentElement).getPropertyValue('--primary-color') || '#3b82f6',
+                    colorBackground: getComputedStyle(document.documentElement).getPropertyValue('--bg-color') || '#ffffff',
+                    colorText: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#1f2937',
+                    colorDanger: '#ef4444',
+                    fontFamily: 'system-ui, sans-serif',
+                    spacingUnit: '4px',
+                    borderRadius: '6px',
+                },
+            },
+        });
+        
+        const cardElementContainer = document.getElementById('card-element');
+        if (cardElementContainer) {
+            // Clear any existing element first
+            cardElementContainer.innerHTML = '';
+            
+            cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#1f2937',
+                        '::placeholder': {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#6b7280',
+                        },
+                    },
+                    invalid: {
+                        color: '#ef4444',
+                    },
+                },
+            });
+            
+            try {
+                cardElement.mount('#card-element');
+                
+                // Handle real-time validation errors
+                cardElement.on('change', ({error}) => {
+                    const displayError = document.getElementById('card-errors');
+                    if (error) {
+                        displayError.textContent = error.message;
+                    } else {
+                        displayError.textContent = '';
+                    }
+                });
+            } catch (error) {
+                console.error('Error mounting Stripe card element:', error);
+                const displayError = document.getElementById('card-errors');
+                if (displayError) {
+                    displayError.textContent = 'Payment form initialization failed. Please refresh the page.';
+                }
+            }
+        }
+    }
+}
+
+// Open panel
+if (donateBtn && donatePanelOverlay) {
+    donateBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        donatePanelOverlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Initialize Stripe if not already done
+        if (!stripe && typeof Stripe !== 'undefined') {
+            await initializeStripe();
+        }
+        
+        // Load donation data when panel opens
+        await loadDonationData();
+    });
+}
+
+// Close panel
+if (donatePanelClose) {
+    donatePanelClose.addEventListener('click', () => {
+        closeDonatePanel();
+    });
+}
+
+if (donatePanelOverlay) {
+    donatePanelOverlay.addEventListener('click', (e) => {
+        if (e.target === donatePanelOverlay) {
+            closeDonatePanel();
+        }
+    });
+}
+
+function closeDonatePanel() {
+    if (donatePanelOverlay) {
+        donatePanelOverlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Update amount display as user types
+if (donateAmountInput && donateAmountDisplay) {
+    // Focus input when clicking on wrapper
+    const wrapper = donateAmountInput.closest('.donate-amount-input-wrapper');
+    if (wrapper) {
+        wrapper.addEventListener('click', () => {
+            donateAmountInput.focus();
+        });
+    }
+    
+    // Update display when input changes
+    donateAmountInput.addEventListener('input', (e) => {
+        // Remove all non-numeric characters (including $, commas, etc.)
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        if (donateAmountInput.value !== value) {
+            donateAmountInput.value = value;
+        }
+        
+        if (value) {
+            const amount = parseInt(value) || 0;
+            // Show dollar sign in the input field itself
+            donateAmountInput.value = `$${amount.toLocaleString()}`;
+            donateAmountDisplay.textContent = `$${amount.toLocaleString()}`;
+        } else {
+            donateAmountInput.value = '$';
+            donateAmountDisplay.textContent = '$0';
+        }
+        
+        // Remove active state from quick buttons if user is typing custom amount
+        const currentValue = parseInt(value) || 0;
+        const quickAmounts = Array.from(donateQuickBtns).map(btn => parseInt(btn.getAttribute('data-amount')));
+        if (!quickAmounts.includes(currentValue)) {
+            donateQuickBtns.forEach(btn => btn.classList.remove('active'));
+        }
+    });
+    
+    // Handle keypress - allow numbers and navigation keys
+    donateAmountInput.addEventListener('keypress', (e) => {
+        // Only allow numbers (0-9) and navigation keys
+        if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') {
+            e.preventDefault();
+        }
+    });
+    
+    // Handle keydown to manage cursor position when dollar sign is present
+    donateAmountInput.addEventListener('keydown', (e) => {
+        // If user tries to delete the dollar sign, prevent it and move cursor
+        if ((e.key === 'Backspace' || e.key === 'Delete') && donateAmountInput.selectionStart <= 1) {
+            if (donateAmountInput.value === '$' || donateAmountInput.value.length <= 1) {
+                e.preventDefault();
+                donateAmountInput.value = '$';
+                donateAmountInput.setSelectionRange(1, 1);
+            }
+        }
+    });
+    
+    // Also handle paste events to remove dollar signs and format
+    donateAmountInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        const numbersOnly = pastedText.replace(/[^0-9]/g, '');
+        if (numbersOnly) {
+            const amount = parseInt(numbersOnly) || 0;
+            donateAmountInput.value = `$${amount.toLocaleString()}`;
+        } else {
+            donateAmountInput.value = '$';
+        }
+        donateAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    
+}
+
+// Quick amount buttons
+donateQuickBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const amount = btn.getAttribute('data-amount');
+        if (donateAmountInput) {
+            // Format with dollar sign
+            donateAmountInput.value = `$${parseInt(amount).toLocaleString()}`;
+            // Trigger input event to update display
+            donateAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (donateAmountDisplay) {
+            donateAmountDisplay.textContent = `$${parseInt(amount).toLocaleString()}`;
+        }
+        
+        // Update active state
+        donateQuickBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Focus input after selecting quick amount so user can edit
+        if (donateAmountInput) {
+            setTimeout(() => {
+                donateAmountInput.focus();
+                // Select all text except the $ sign so user can immediately type to replace or edit
+                donateAmountInput.setSelectionRange(1, donateAmountInput.value.length);
+            }, 10);
+        }
+    });
+});
+
+if (donateSubmitBtn && donateAmountInput) {
+    donateSubmitBtn.addEventListener('click', async () => {
+        const amount = parseFloat(donateAmountInput.value);
+        
+        if (!amount || amount < 1) {
+            showNotification('Please enter a valid amount (minimum $1)', 'error');
+            return;
+        }
+        
+        if (!cardElement) {
+            showNotification('Payment form not ready. Please wait...', 'error');
+            return;
+        }
+        
+        // Disable button
+        donateSubmitBtn.disabled = true;
+        donateSubmitBtn.textContent = 'Processing...';
+        
+        try {
+            // Get user info for donation
+            let donorName = 'Anonymous';
+            let userId = null;
+            if (typeof supabase !== 'undefined' && supabase) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    userId = session.user.id;
+                    const { data: profile } = await supabase
+                        .from('user_profiles')
+                        .select('display_name')
+                        .eq('id', session.user.id)
+                        .single();
+                    
+                    if (profile && profile.display_name) {
+                        donorName = profile.display_name;
+                    }
+                }
+            }
+            
+            // Create payment intent on backend
+            const response = await fetch('/api/create-payment-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    amount: amount * 100, // Convert to cents
+                    donorName: donorName,
+                    userId: userId
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to create payment');
+            }
+            
+            const { clientSecret } = await response.json();
+            
+            if (!clientSecret) {
+                throw new Error('No client secret returned');
+            }
+            
+            // Confirm payment with Stripe
+            const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: {
+                    card: cardElement,
+                }
+            });
+            
+            if (stripeError) {
+                throw new Error(stripeError.message);
+            }
+            
+            if (paymentIntent.status === 'succeeded') {
+                showNotification('Thank you for your donation!', 'success');
+                
+                // Refresh leaderboard and recent donations immediately
+                await loadDonationData();
+                
+                // Small delay before closing to show updated data
+                setTimeout(() => {
+                    closeDonatePanel();
+                    // Reset form
+                    donateAmountInput.value = '$';
+                    if (donateAmountDisplay) {
+                        donateAmountDisplay.textContent = '$0';
+                    }
+                    if (cardElement) {
+                        cardElement.clear();
+                    }
+                }, 1500);
+            }
+            
+        } catch (error) {
+            console.error('Donation error:', error);
+            showNotification(error.message || 'Failed to process donation. Please try again.', 'error');
+        } finally {
+            if (donateSubmitBtn) {
+                donateSubmitBtn.disabled = false;
+                donateSubmitBtn.textContent = 'Donate';
+            }
+        }
+    });
+}
+
+// Load donation data (leaderboard and recent donations)
+async function loadDonationData() {
+    try {
+        // Try API endpoint first (for production)
+        let leaderboard = [];
+        let recent = [];
+        
+        try {
+            const response = await fetch('/api/get-donations');
+            
+            // Check if API endpoint exists (404 means it's not available locally)
+            if (response.status === 404) {
+                // API not available locally - fetch directly from Supabase
+                throw new Error('API not available, using direct Supabase query');
+            }
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch donations: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            leaderboard = data.leaderboard || [];
+            recent = data.recent || [];
+        } catch (apiError) {
+            // Fallback: Query Supabase directly (for localhost)
+            console.log('API not available, querying Supabase directly...');
+            
+            if (!supabase) {
+                throw new Error('Supabase client not initialized');
+            }
+            
+            // Get all succeeded donations (exclude Anonymous for leaderboard)
+            const { data: allDonations, error: topError } = await supabase
+                .from('donations')
+                .select('donor_name, amount')
+                .eq('status', 'succeeded')
+                .neq('donor_name', 'Anonymous');
+            
+            if (topError) {
+                // If table doesn't exist, return empty arrays
+                if (topError.code === 'PGRST116' || topError.message.includes('relation') || topError.message.includes('does not exist')) {
+                    leaderboard = [];
+                    recent = [];
+                } else {
+                    throw topError;
+                }
+            } else {
+                // Group by donor_name and sum amounts for leaderboard
+                const leaderboardMap = new Map();
+                (allDonations || []).forEach(donation => {
+                    if (donation.donor_name && donation.donor_name !== 'Anonymous') {
+                        const current = leaderboardMap.get(donation.donor_name) || 0;
+                        leaderboardMap.set(donation.donor_name, current + donation.amount);
+                    }
+                });
+                
+                leaderboard = Array.from(leaderboardMap.entries())
+                    .map(([name, total]) => ({ name, total }))
+                    .sort((a, b) => b.total - a.total)
+                    .slice(0, 3);
+                
+                // Get recent donations (only succeeded, exclude Anonymous)
+                const { data: recentDonations, error: recentError } = await supabase
+                    .from('donations')
+                    .select('donor_name, amount, created_at')
+                    .eq('status', 'succeeded')
+                    .neq('donor_name', 'Anonymous')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (!recentError && recentDonations) {
+                    recent = recentDonations.map(donation => ({
+                        name: donation.donor_name,
+                        amount: donation.amount,
+                        time: formatRelativeTime(new Date(donation.created_at))
+                    }));
+                }
+            }
+        }
+        
+        // Update leaderboard
+        const leaderboardContainer = document.getElementById('donateLeaderboard');
+        if (leaderboardContainer) {
+            if (leaderboard && leaderboard.length > 0) {
+                leaderboardContainer.innerHTML = '';
+                leaderboard.forEach((donor, index) => {
+                    const item = document.createElement('div');
+                    const rank = index + 1;
+                    let rankClass = '';
+                    if (rank === 1) rankClass = 'leaderboard-rank-gold';
+                    else if (rank === 2) rankClass = 'leaderboard-rank-silver';
+                    else if (rank === 3) rankClass = 'leaderboard-rank-bronze';
+                    
+                    item.className = 'donate-leaderboard-item';
+                    item.innerHTML = `
+                        <span class="leaderboard-rank ${rankClass}">${rank}</span>
+                        <span class="leaderboard-name">${escapeHtml(donor.name)}</span>
+                        <span class="leaderboard-amount">$${(donor.total / 100).toLocaleString()}</span>
+                    `;
+                    leaderboardContainer.appendChild(item);
+                });
+            } else {
+                leaderboardContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 1rem;">No donations yet</p>';
+            }
+        }
+        
+        // Update recent donations
+        const recentContainer = document.getElementById('donateRecentList');
+        if (recentContainer) {
+            if (recent && recent.length > 0) {
+                recentContainer.innerHTML = '';
+                recent.forEach(donation => {
+                    const item = document.createElement('div');
+                    item.className = 'donate-recent-item';
+                    item.innerHTML = `
+                        <span class="recent-name">${escapeHtml(donation.name)}</span>
+                        <span class="recent-amount">$${(donation.amount / 100).toLocaleString()}</span>
+                        <span class="recent-time">${escapeHtml(donation.time)}</span>
+                    `;
+                    recentContainer.appendChild(item);
+                });
+            } else {
+                recentContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 1rem;">No recent donations</p>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading donation data:', error);
+        // Show empty state instead of error (API might not be available locally)
+        const leaderboardContainer = document.getElementById('donateLeaderboard');
+        const recentContainer = document.getElementById('donateRecentList');
+        if (leaderboardContainer) {
+            leaderboardContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 1rem;">No donations yet</p>';
+        }
+        if (recentContainer) {
+            recentContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 1rem;">No recent donations</p>';
+        }
+    }
+}
+
+// Helper function to format relative time
+function formatRelativeTime(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+}
+
 // Initialize the app
 async function init() {
     setupStartButton(); // Setup the start conversation button
     await updateLoginButton();
-    initNewsSlideshow();
+    initQuestionsSlideshow();
     await loadRooms();
     subscribeToRooms();
     
@@ -879,4 +1577,5 @@ if (themeToggleBtn) {
 
 // Run initialization when page loads
 init();
+
 

@@ -8,14 +8,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="animations.css">
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <header>
         <div class="container header-container">
             <div class="logo">
-                <h1>Speakers Server - <span class="header-quote-text">where opinions meet conversation</span></h1>
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <h1>Speakers Server <span class="header-dash">-</span> <span class="header-quote-text">where opinions meet conversation</span></h1>
+                </a>
             </div>
             <div class="header-actions">
+                <a href="#" class="donate-btn" id="donateBtn">Donate</a>
                 <a href="about.html" class="info-btn">
                     Info
                 </a>
@@ -39,10 +45,10 @@
     
 
     <main>
-        <!-- News Slideshow Section -->
+        <!-- Controversial Questions Slideshow Section -->
         <section class="news-slideshow-section">
             <div class="news-slideshow" id="newsSlideshow">
-                <!-- News slides will be dynamically added here -->
+                <!-- Questions slides will be dynamically added here -->
             </div>
         </section>
 
@@ -61,111 +67,87 @@
         </section>
     </main>
 
-    <!-- Multi-step Modal for creating a discussion -->
-    <div id="createDiscussionModal" class="modal">
-        <div class="modal-content multi-step-modal">
-            <div class="modal-header">
-                <h2>Start a conversation</h2>
-                <button class="close" id="closeModalBtn">&times;</button>
-            </div>
-            
-            <!-- Progress Steps -->
-            <div class="steps-indicator">
-                <div class="step-item active" data-step="1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Details</div>
+    <!-- Create Conversation Form (No Modal) -->
+    <div id="createConversationForm" class="create-conversation-form" style="display: none;">
+        <form id="discussionForm">
+            <!-- Step 1: Title -->
+            <div class="conversation-step active" data-step="1">
+                <div class="conversation-question">
+                    <label>What's your conversation about?</label>
                 </div>
-                <div class="step-line"></div>
-                <div class="step-item" data-step="2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Category</div>
-                </div>
-                <div class="step-line"></div>
-                <div class="step-item" data-step="3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Review</div>
+                <div class="conversation-answer">
+                    <input type="text" id="discussionTitle" name="title" placeholder="Enter a compelling title..." required>
+                    <button type="button" class="nav-arrow nav-arrow-right" id="nextStepBtn1">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <form id="discussionForm">
-                <!-- Step 1: Title and Description -->
-                <div class="step-content active" data-step="1">
-                    <div class="form-question-group">
-                        <div class="form-question">
-                            <label for="discussionTitle">What's your conversation about?</label>
-                        </div>
-                        <div class="form-answer">
-                            <input type="text" id="discussionTitle" name="title" placeholder="Enter a compelling title..." required>
-                        </div>
-                    </div>
-
-                    <div class="form-question-group">
-                        <div class="form-question">
-                            <label for="discussionDescription">Tell us more about it</label>
-                        </div>
-                        <div class="form-answer">
-                            <textarea id="discussionDescription" name="description" placeholder="What's this discussion about?" rows="5" required></textarea>
-                        </div>
+            <!-- Step 2: Description -->
+            <div class="conversation-step" data-step="2">
+                <div class="conversation-question">
+                    <label>Tell us more about it</label>
+                </div>
+                <div class="conversation-answer">
+                    <textarea id="discussionDescription" name="description" placeholder="What's this discussion about?" rows="4" required></textarea>
+                    <div class="answer-nav-buttons">
+                        <button type="button" class="nav-arrow nav-arrow-left" id="prevStepBtn2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button type="button" class="nav-arrow nav-arrow-right" id="nextStepBtn2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Step 2: Category -->
-                <div class="step-content" data-step="2">
-                    <div class="form-question-group">
-                        <div class="form-question">
-                            <label for="category">Choose a category <span style="font-weight: normal; color: var(--text-secondary);">(Optional)</span></label>
-                        </div>
-                        <div class="form-answer">
-                            <select id="category" name="category">
-                                <option value="">No category</option>
-                                <option value="debate">Debate</option>
-                                <option value="hot-takes">Hot Takes</option>
-                                <option value="chilling">Chilling</option>
-                                <option value="technology">Technology</option>
-                                <option value="entertainment">Entertainment</option>
-                                <option value="science">Science</option>
-                                <option value="politics">Politics</option>
-                                <option value="sports">Sports</option>
-                                <option value="lifestyle">Lifestyle</option>
-                                <option value="education">Education</option>
-                                <option value="gaming">Gaming</option>
-                                <option value="general">General</option>
-                            </select>
-                            <small class="form-help-text">💡 Adding a category can help users find your conversation easier</small>
-                        </div>
-                    </div>
+            <!-- Step 3: Category -->
+            <div class="conversation-step" data-step="3">
+                <div class="conversation-question">
+                    <label>Choose a category <span style="font-weight: normal; color: var(--text-secondary);">(Optional)</span></label>
                 </div>
+                <div class="conversation-answer">
+                    <select id="category" name="category">
+                        <option value="">No category</option>
+                        <option value="debate">Debate</option>
+                        <option value="hot-takes">Hot Takes</option>
+                        <option value="chilling">Chilling</option>
+                        <option value="technology">Technology</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="science">Science</option>
+                        <option value="politics">Politics</option>
+                        <option value="sports">Sports</option>
+                        <option value="lifestyle">Lifestyle</option>
+                        <option value="education">Education</option>
+                        <option value="gaming">Gaming</option>
+                        <option value="general">General</option>
+                    </select>
+                    <button type="button" class="nav-arrow nav-arrow-left" id="prevStepBtn3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
-                <!-- Step 3: Review -->
-                <div class="step-content" data-step="3">
-                    <div class="review-section">
-                        <h3>Review Your Room</h3>
-                        <div class="review-item">
-                            <label>Title:</label>
-                            <p id="reviewTitle"></p>
-                        </div>
-                        <div class="review-item">
-                            <label>Description:</label>
-                            <p id="reviewDescription"></p>
-                        </div>
-                        <div class="review-item">
-                            <label>Category:</label>
-                            <p id="reviewCategory">No category</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Pagination Dots -->
+            <div class="conversation-pagination">
+                <span class="pagination-dot active" data-step="1"></span>
+                <span class="pagination-dot" data-step="2"></span>
+                <span class="pagination-dot" data-step="3"></span>
+            </div>
 
-                <!-- Navigation Buttons -->
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-                    <div class="step-buttons">
-                        <button type="button" class="btn-secondary" id="prevBtn" style="display: none;">Previous</button>
-                        <button type="button" class="btn-primary" id="nextBtn">Next</button>
-                        <button type="submit" class="btn-primary" id="submitBtn" style="display: none;">Create Room</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+            <!-- Submit Button (only on last step) -->
+            <div class="conversation-submit-container">
+                <button type="submit" class="conversation-submit-btn" id="submitBtn" style="display: none;">Start your conversation</button>
+            </div>
+        </form>
     </div>
 
 
@@ -198,6 +180,61 @@
         console.log('✅ Configuration loaded', { environment: isLocal ? 'local' : 'production' });
     </script>
     
+    <!-- Donate Panel (slides in from right) -->
+    <div class="donate-panel-overlay" id="donatePanelOverlay" style="display: none;">
+        <div class="donate-panel" id="donatePanel">
+            <div class="donate-panel-header">
+                <h2>Support Speakers Server</h2>
+                <button class="donate-panel-close" id="donatePanelClose">&times;</button>
+            </div>
+            
+            <div class="donate-panel-content">
+                <!-- Donation Form -->
+                <div class="donate-form-section">
+                    <h3>Make a Donation</h3>
+                    <div class="donate-amount-group">
+                        <label for="donateAmount">Amount (USD)</label>
+                        <div class="donate-amount-input-wrapper">
+                            <span class="donate-currency-display" id="donateAmountDisplay">$0</span>
+                            <input type="text" id="donateAmount" class="donate-amount-input" placeholder="0" inputmode="numeric" pattern="[0-9]*" required autocomplete="off">
+                        </div>
+                        <div class="donate-quick-amounts">
+                            <button type="button" class="donate-quick-btn" data-amount="10">$10</button>
+                            <button type="button" class="donate-quick-btn" data-amount="50">$50</button>
+                            <button type="button" class="donate-quick-btn" data-amount="100">$100</button>
+                            <button type="button" class="donate-quick-btn" data-amount="500">$500</button>
+                        </div>
+                    </div>
+                    <div class="donate-payment-info">
+                        <p class="donate-info-text">Every cent helps to keep your voice heard</p>
+                    </div>
+                    <!-- Stripe Card Element -->
+                    <div id="card-element" class="stripe-card-element">
+                        <!-- Stripe Elements will create form elements here -->
+                    </div>
+                    <div id="card-errors" class="stripe-card-errors" role="alert"></div>
+                    <button type="button" class="donate-submit-btn" id="donateSubmitBtn">Donate</button>
+                </div>
+                
+                <!-- Top Donators Leaderboard -->
+                <div class="donate-leaderboard-section">
+                    <h3>Top Donators</h3>
+                    <div class="donate-leaderboard" id="donateLeaderboard">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 1rem;">Loading...</p>
+                    </div>
+                </div>
+                
+                <!-- Recent Donations -->
+                <div class="donate-recent-section">
+                    <h3>Recent Donations</h3>
+                    <div class="donate-recent-list" id="donateRecentList">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 1rem;">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Application Script -->
     <script src="script.js"></script>
 </body>
