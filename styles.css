@@ -59,7 +59,7 @@ header .container {
     align-items: center;
     gap: 1rem;
     position: relative;
-    padding: 0;
+    padding: 0 12px;
     max-width: 100%;
 }
 
