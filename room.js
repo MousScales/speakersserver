@@ -2490,7 +2490,7 @@ function createParticipantTile(identity, participantName) {
     tile.setAttribute('data-participant-id', identity);
     tile.setAttribute('data-participant-name', participantName);
     
-    // Make tile clickable to mute/unmute
+    // Make tile clickable to show participant menu (mute option is in dropdown)
     tile.style.cursor = 'pointer';
     tile.addEventListener('click', () => {
         // Find the user_id from participants array
@@ -2500,7 +2500,7 @@ function createParticipantTile(identity, participantName) {
         });
         
         if (participant && participant.user_id !== currentUserId) {
-            toggleMuteParticipant(participant.user_id);
+            showParticipantMenu(participant);
         }
     });
     
