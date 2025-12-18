@@ -535,6 +535,10 @@
             
             if (error) {
                 console.error('Error loading notes:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
+                if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+                    notesContainer.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">Notes table not found. Please run the SQL setup script in Supabase.</p>';
+                }
                 return;
             }
             
@@ -679,19 +683,28 @@
             }
             
             try {
+                const insertData = {
+                    user_id: session.user.id,
+                    name: name.trim(),
+                    type: 'note',
+                    content: ''
+                };
+                
+                if (currentFolderId) {
+                    insertData.parent_id = currentFolderId;
+                }
+                
                 const { data, error } = await supabase
                     .from('user_notes')
-                    .insert({
-                        user_id: session.user.id,
-                        name: name.trim(),
-                        type: 'note',
-                        parent_id: currentFolderId,
-                        content: ''
-                    })
+                    .insert(insertData)
                     .select()
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error creating note:', error);
+                    console.error('Error details:', JSON.stringify(error, null, 2));
+                    throw error;
+                }
                 
                 selectedNoteId = data.id;
                 await loadNotes(currentFolderId);
