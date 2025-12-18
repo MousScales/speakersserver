@@ -3136,55 +3136,7 @@ if (newNoteBtnRoom) {
     });
 }
 
-// Save note in room
-if (saveNoteBtnRoom) {
-    saveNoteBtnRoom.addEventListener('click', async () => {
-        if (!selectedRoomNoteId) return;
-        
-        if (!supabase || !supabase.auth) return;
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        
-        const name = noteNameInputRoom ? noteNameInputRoom.value.trim() : '';
-        const content = noteContentTextareaRoom ? noteContentTextareaRoom.value : '';
-        
-        if (!name) {
-            alert('Note name cannot be empty');
-            return;
-        }
-        
-        saveNoteBtnRoom.disabled = true;
-        saveNoteBtnRoom.textContent = 'Saving...';
-        
-        try {
-            const { error } = await supabase
-                .from('user_notes')
-                .update({
-                    name: name,
-                    content: content,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', selectedRoomNoteId)
-                .eq('user_id', session.user.id);
-            
-            if (error) throw error;
-            
-            saveNoteBtnRoom.textContent = 'Saved!';
-            setTimeout(() => {
-                saveNoteBtnRoom.textContent = 'Save';
-            }, 2000);
-            
-            await loadNotesForRoom(currentRoomFolderId);
-        } catch (error) {
-            console.error('Error saving note:', error);
-            alert('Failed to save note. Please try again.');
-            saveNoteBtnRoom.textContent = 'Save';
-        } finally {
-            saveNoteBtnRoom.disabled = false;
-        }
-    });
-}
+// Note saving is now handled by saveCurrentNoteRoom() function (called via onclick in HTML)
 
 function escapeHtml(text) {
     const div = document.createElement('div');
