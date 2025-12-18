@@ -86,9 +86,16 @@ let isAuthenticated = false;
 (async function checkAuthAndLoadProfile() {
     // No modal needed - users are automatically authenticated or assigned anonymous name
     
-    // Check if supabase is initialized
+    // Check if supabase is initialized - wait for it to be ready
     if (typeof supabase === 'undefined' || supabase === null) {
-        console.warn('Supabase client not initialized, retrying...');
+        console.warn('Supabase client not initialized, retrying in 100ms...');
+        setTimeout(checkAuthAndLoadProfile, 100);
+        return;
+    }
+    
+    // Double check that supabase has the auth property
+    if (!supabase.auth) {
+        console.warn('Supabase client not fully initialized, retrying...');
         setTimeout(checkAuthAndLoadProfile, 100);
         return;
     }

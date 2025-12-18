@@ -142,16 +142,28 @@
         const TOKEN_SERVER_URL = isLocal ? 'http://localhost:3001' : window.location.origin + '/api/token';
         
         // Initialize Supabase client - check if already exists to avoid redeclaration
-        if (typeof supabase === 'undefined' || supabase === null) {
-            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } else {
-                console.error('Supabase library not loaded');
-                var supabase = null;
+        function initializeSupabase() {
+            // Check if supabase client already exists (from another page)
+            if (typeof supabase !== 'undefined' && supabase !== null) {
+                console.log('Reusing existing Supabase client');
+                return supabase;
             }
-        } else {
-            console.log('Reusing existing Supabase client');
+            
+            // Check if Supabase library is loaded
+            if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+                console.warn('Supabase library not loaded yet, retrying...');
+                setTimeout(initializeSupabase, 100);
+                return null;
+            }
+            
+            // Create the client
+            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized');
+            return supabase;
         }
+        
+        // Initialize immediately (will retry if library not ready)
+        var supabase = initializeSupabase();
         
         console.log('✅ Configuration loaded', { environment: isLocal ? 'local' : 'production' });
     </script>
