@@ -1,9 +1,23 @@
 // Get modal and main elements
 const modal = document.getElementById('createDiscussionModal');
-const startBtn = document.getElementById('startDiscussionBtn');
+let startBtn = null; // Will be set dynamically when button is created
 const cancelBtn = document.getElementById('cancelBtn');
 const discussionForm = document.getElementById('discussionForm');
 const loginBtn = document.getElementById('loginBtn');
+
+// Function to setup start button event listener
+function setupStartButton() {
+    startBtn = document.getElementById('startDiscussionBtn');
+    if (startBtn && !startBtn.hasAttribute('data-listener-attached')) {
+        startBtn.setAttribute('data-listener-attached', 'true');
+        startBtn.addEventListener('click', () => {
+            if (modal) {
+                modal.style.display = 'flex';
+                initModal();
+            }
+        });
+    }
+}
 
 
 // Room organization by category
