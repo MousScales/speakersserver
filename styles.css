@@ -68,13 +68,7 @@ header .container {
     flex-shrink: 0;
 }
 
-.header-quote {
-    flex: 1;
-    text-align: center;
-}
-
-.header-quote p {
-    margin: 0;
+.header-quote-text {
     font-size: 0.875rem;
     color: var(--text-secondary);
     font-style: italic;
