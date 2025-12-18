@@ -7,9 +7,14 @@ Before the news API can work, you need to set these environment variables in Ver
 1. Go to **Vercel Dashboard** → Your Project → **Settings** → **Environment Variables**
 2. Add these variables:
 
-   - **`OPEN_AI_KEY`**
+   - **`OPEN_AI_KEY`** (optional, used as fallback)
      - Value: Your OpenAI API key
      - Get it from: https://platform.openai.com/api-keys
+   
+   - **`NEWS_API_KEY`** (recommended, for real article URLs)
+     - Value: Your NewsAPI key
+     - Get it from: https://newsapi.org/register (free tier available)
+     - This provides real news article URLs instead of Google News search links
    
    - **`SUPABASE_SERVICE_KEY`** (or `SUPABASE_SERVICE_ROLE_KEY`)
      - Value: Your Supabase service role key
