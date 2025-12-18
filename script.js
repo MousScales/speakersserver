@@ -18,6 +18,7 @@ async function displayRoomsByCategory() {
     
     // Define category order and display names
     const categoryOrder = [
+        { key: 'currently-live', name: 'Currently Live', filter: (room) => (room.active_participants || 0) > 0, sort: (a, b) => (b.active_participants || 0) - (a.active_participants || 0) },
         { key: 'popular', name: 'Popular', sort: (a, b) => (b.active_participants || 0) - (a.active_participants || 0) },
         { key: 'new', name: 'New', filter: (room) => {
             const oneDayAgo = new Date();
@@ -34,7 +35,9 @@ async function displayRoomsByCategory() {
     for (const cat of categoryOrder) {
         let categoryRooms = [];
         
-        if (cat.key === 'popular') {
+        if (cat.key === 'currently-live') {
+            categoryRooms = allRooms.filter(cat.filter).sort(cat.sort).slice(0, 10); // Top 10 currently live
+        } else if (cat.key === 'popular') {
             categoryRooms = [...allRooms].sort(cat.sort).slice(0, 10); // Top 10 popular
         } else if (cat.key === 'new') {
             categoryRooms = allRooms.filter(cat.filter).sort(cat.sort).slice(0, 10); // Top 10 new
@@ -42,36 +45,52 @@ async function displayRoomsByCategory() {
             categoryRooms = allRooms.filter(room => room.category === cat.key).slice(0, 10); // First 10 in category
         }
         
-        if (categoryRooms.length > 0) {
+        // Always show the "Currently Live" section, even if empty
+        if (cat.key === 'currently-live' || categoryRooms.length > 0) {
             const section = document.createElement('div');
             section.className = 'category-section';
             section.setAttribute('data-category', cat.key);
             
             const header = document.createElement('div');
             header.className = 'category-section-header';
+            
+            // Only show "View all" if there are rooms
+            const viewAllBtn = categoryRooms.length > 0 
+                ? `<button class="view-all-btn" data-category="${cat.key}">View all</button>`
+                : '';
+            
             header.innerHTML = `
                 <h3 class="category-section-title">${cat.name}</h3>
-                <button class="view-all-btn" data-category="${cat.key}">View all</button>
+                ${viewAllBtn}
             `;
             
             const grid = document.createElement('div');
             grid.className = 'rooms-grid';
             
-            // Create room cards for this category
-            for (const room of categoryRooms) {
-                const card = await createRoomCard(room);
-                grid.appendChild(card);
+            if (categoryRooms.length > 0) {
+                // Create room cards for this category
+                for (const room of categoryRooms) {
+                    const card = await createRoomCard(room);
+                    grid.appendChild(card);
+                }
+            } else {
+                // Show "No current rooms available" message
+                grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem; white-space: nowrap;">No current rooms available</p>';
             }
             
             section.appendChild(header);
             section.appendChild(grid);
             categorySections.appendChild(section);
             
-            // Add click handler for "View all" button
-            const viewAllBtn = header.querySelector('.view-all-btn');
-            viewAllBtn.addEventListener('click', () => {
-                showCategoryView(cat.key, cat.name);
-            });
+            // Add click handler for "View all" button if it exists
+            if (categoryRooms.length > 0) {
+                const viewAllButton = header.querySelector('.view-all-btn');
+                if (viewAllButton) {
+                    viewAllButton.addEventListener('click', () => {
+                        showCategoryView(cat.key, cat.name);
+                    });
+                }
+            }
         }
     }
 }
@@ -91,7 +110,10 @@ function showCategoryView(categoryKey, categoryName) {
     
     let filteredRooms = [];
     
-    if (categoryKey === 'popular') {
+    if (categoryKey === 'currently-live') {
+        filteredRooms = allRooms.filter(room => (room.active_participants || 0) > 0)
+            .sort((a, b) => (b.active_participants || 0) - (a.active_participants || 0));
+    } else if (categoryKey === 'popular') {
         filteredRooms = [...allRooms].sort((a, b) => (b.active_participants || 0) - (a.active_participants || 0));
     } else if (categoryKey === 'new') {
         const oneDayAgo = new Date();
