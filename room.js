@@ -654,7 +654,11 @@ function updateSpeakersList() {
     // Update grid layout attribute
     speakersContainer.setAttribute('data-count', speakers.length);
     
-    speakers.forEach(speaker => {
+    // For 2-5 speakers, arrange them spreading from center
+    // We'll insert them in a way that centers them
+    const speakerCount = speakers.length;
+    
+    speakers.forEach((speaker, index) => {
         const tile = createParticipantTile(speaker.user_id, speaker.username);
         
         // Add role badge if host or moderator
@@ -684,7 +688,19 @@ function updateSpeakersList() {
             showParticipantMenu(speaker);
         });
         
-        speakersContainer.appendChild(tile);
+        // For 2-5 speakers, insert in order that centers them
+        // For 1 speaker, just append (will be centered by CSS)
+        // For 6+, just append (grid will handle layout)
+        if (speakerCount === 1) {
+            // Single speaker - just append, CSS will center
+            speakersContainer.appendChild(tile);
+        } else if (speakerCount <= 5) {
+            // 2-5 speakers - insert in order, CSS will center them
+            speakersContainer.appendChild(tile);
+        } else {
+            // 6+ speakers - grid layout will handle stacking
+            speakersContainer.appendChild(tile);
+        }
     });
     
     // Update audience list (non-speaking participants)
