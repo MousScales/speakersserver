@@ -15,7 +15,10 @@ const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const leaveBtn = document.getElementById('leaveBtn');
+const endMeetingBtn = document.getElementById('endMeetingBtn');
 const raiseHandBtn = document.getElementById('raiseHandBtn');
+const meetingEndedModal = document.getElementById('meetingEndedModal');
+const goHomeBtn = document.getElementById('goHomeBtn');
 const micBtn = document.getElementById('micBtn');
 const screenShareBtn = document.getElementById('screenShareBtn');
 const participantsBtn = document.getElementById('participantsBtn');
@@ -200,10 +203,28 @@ let isAuthenticated = false;
         subscribeToChat();
         subscribeToParticipants();
         
-        // Add event listener for end meeting button
-        if (endMeetingBtn) {
-            endMeetingBtn.addEventListener('click', endMeeting);
+// Show meeting ended modal
+function showMeetingEndedModal() {
+    if (meetingEndedModal) {
+        meetingEndedModal.style.display = 'flex';
+    }
+}
+
+// Hide meeting ended modal and redirect
+if (goHomeBtn) {
+    goHomeBtn.addEventListener('click', () => {
+        clearSession();
+        if (livekitRoom) {
+            livekitRoom.disconnect();
         }
+        window.location.href = 'index.html';
+    });
+}
+
+// Add event listener for end meeting button
+if (endMeetingBtn) {
+    endMeetingBtn.addEventListener('click', endMeeting);
+}
     }
 })();
 
@@ -384,6 +405,15 @@ async function updateUIForRole() {
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
             sendBtn.style.cursor = 'pointer';
+        }
+    }
+    
+    // Show/hide End Meeting button for hosts
+    if (endMeetingBtn) {
+        if (currentRole === 'host') {
+            endMeetingBtn.style.display = 'inline-flex';
+        } else {
+            endMeetingBtn.style.display = 'none';
         }
     }
     
@@ -1248,6 +1278,22 @@ function subscribeToChat() {
             filter: `room_id=eq.${roomId}`
         }, (payload) => {
             console.log('✅ Real-time chat message received:', payload.new);
+            
+            // Check if it's a system message about meeting ending
+            if (payload.new.user_id === 'system' && 
+                payload.new.message && 
+                payload.new.message.includes('ended the meeting')) {
+                showMeetingEndedModal();
+                setTimeout(() => {
+                    clearSession();
+                    if (livekitRoom) {
+                        livekitRoom.disconnect();
+                    }
+                    window.location.href = 'index.html';
+                }, 5000);
+                return;
+            }
+            
             displayMessage(payload.new);
             scrollToBottom();
         })
@@ -1279,9 +1325,58 @@ function subscribeToParticipants() {
             // Check if current user was kicked
             if (payload.eventType === 'DELETE' && payload.old.user_id === currentUserId) {
                 clearSession();
-                alert('You have been removed from the room');
-                window.location.href = 'index.html';
+                showMeetingEndedModal();
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 5000);
                 return;
+            }
+            
+            // Check if all participants were deleted (host ended meeting)
+            if (payload.eventType === 'DELETE') {
+                // Small delay to let the database update
+                setTimeout(async () => {
+                    const { data: remainingParticipants } = await supabase
+                        .from('room_participants')
+                        .select('user_id')
+                        .eq('room_id', roomId);
+                    
+                    // If no participants left, meeting was ended
+                    if (!remainingParticipants || remainingParticipants.length === 0) {
+                        showMeetingEndedModal();
+                        setTimeout(() => {
+                            clearSession();
+                            if (livekitRoom) {
+                                livekitRoom.disconnect();
+                            }
+                            window.location.href = 'index.html';
+                        }, 5000);
+                        return;
+                    }
+                }, 500);
+            }
+            
+            // Check if all participants were deleted (host ended meeting) - old code
+            if (payload.eventType === 'DELETE') {
+                // Reload participants to check if anyone is left
+                const { data: remainingParticipants } = await supabase
+                    .from('room_participants')
+                    .select('user_id')
+                    .eq('room_id', roomId);
+                
+                // If no participants left (or only current user), meeting was ended
+                if (!remainingParticipants || remainingParticipants.length === 0 || 
+                    (remainingParticipants.length === 1 && remainingParticipants[0].user_id === currentUserId)) {
+                    showMeetingEndedModal();
+                    setTimeout(() => {
+                        clearSession();
+                        if (livekitRoom) {
+                            livekitRoom.disconnect();
+                        }
+                        window.location.href = 'index.html';
+                    }, 5000);
+                    return;
+                }
             }
             
             // Check for hand raises (notify host/moderators)
@@ -1531,13 +1626,17 @@ async function transferHost() {
                     created_at: new Date().toISOString()
                 }]);
             
-            // Show notification to current user if they're anonymous
-            if (currentUserId.startsWith('anonymous_')) {
-                showNotification('The host has ended the meeting. You will be redirected...', 'error');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 3000);
-            }
+            // Show modal notification in the middle of the screen
+            showMeetingEndedModal();
+            
+            // Auto-redirect after 5 seconds
+            setTimeout(() => {
+                clearSession();
+                if (livekitRoom) {
+                    livekitRoom.disconnect();
+                }
+                window.location.href = 'index.html';
+            }, 5000);
             return;
         }
         
