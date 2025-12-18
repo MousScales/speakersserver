@@ -2775,9 +2775,10 @@ function playNotificationSound() {
     }
 }
 
-// Simple Notes Popup Functionality
+// Notes Functionality (matching settings page)
 let selectedRoomNoteId = null;
-let editingNoteId = null;
+let currentRoomFolderId = null;
+let roomBreadcrumbPath = [];
 let notesChannel = null;
 
 // Setup real-time subscription for notes
@@ -2800,11 +2801,11 @@ async function setupNotesRealtime() {
             schema: 'public',
             table: 'user_notes',
             filter: `user_id=eq.${session.user.id}`
-        }, (payload) => {
+                }, (payload) => {
             console.log('Notes changed:', payload);
             // Reload notes if modal is open
             if (notesModal && notesModal.style.display === 'flex') {
-                loadNotesForRoom();
+                loadNotesForRoom(currentRoomFolderId);
             }
         })
         .subscribe();
@@ -2815,7 +2816,9 @@ if (notesBtn) {
     notesBtn.addEventListener('click', () => {
         if (notesModal) {
             notesModal.style.display = 'flex';
-            loadNotesForRoom();
+            currentRoomFolderId = null;
+            roomBreadcrumbPath = [];
+            loadNotesForRoom(null);
             setupNotesRealtime();
         }
     });
@@ -2843,8 +2846,8 @@ if (notesModal) {
     });
 }
 
-// Load notes for room (only notes, no folders)
-async function loadNotesForRoom() {
+// Load notes for room (folders and notes, matching settings)
+async function loadNotesForRoom(folderId = null) {
     if (!supabase || !supabase.auth) return;
     
     const { data: { session } } = await supabase.auth.getSession();
@@ -2855,60 +2858,86 @@ async function loadNotesForRoom() {
         return;
     }
     
-    // Load only notes (not folders)
-    const { data: items, error } = await supabase
+    // Load items in current folder
+    let query = supabase
         .from('user_notes')
         .select('*')
-        .eq('user_id', session.user.id)
-        .eq('type', 'note')
-        .is('parent_id', null)
-        .order('updated_at', { ascending: false });
+        .eq('user_id', session.user.id);
+    
+    if (folderId) {
+        query = query.eq('parent_id', folderId);
+    } else {
+        query = query.is('parent_id', null);
+    }
+    
+    const { data: items, error } = await query
+        .order('type', { ascending: false }) // Folders first
+        .order('name', { ascending: true });
     
     if (error) {
         console.error('Error loading notes:', error);
         return;
     }
     
-    // Render notes
-    if (notesListRoom) {
-        notesListRoom.innerHTML = '';
+    // Render items
+    renderNotesTreeRoom(items || [], folderId);
+}
+
+// Render notes tree (matching settings)
+function renderNotesTreeRoom(items, folderId) {
+    if (!notesListRoom) return;
+    
+    notesListRoom.innerHTML = '';
+    
+    // Breadcrumb navigation
+    if (roomBreadcrumbPath.length > 0 || folderId) {
+        const breadcrumbDiv = document.createElement('div');
+        breadcrumbDiv.className = 'notes-breadcrumb';
+        breadcrumbDiv.innerHTML = '<span class="notes-breadcrumb-item" onclick="navigateToRoomFolder(null)">Home</span>';
         
-        if (!items || items.length === 0) {
-            notesListRoom.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">No notes yet. Click "New Note" to create one.</p>';
-        } else {
-            items.forEach(note => {
-                const noteDiv = document.createElement('div');
-                noteDiv.className = 'notes-popup-item';
-                noteDiv.setAttribute('data-id', note.id);
-                
-                if (editingNoteId === note.id) {
-                    // Show editor
-                    noteDiv.innerHTML = `
-                        <div class="notes-popup-editor">
-                            <input type="text" class="notes-popup-name-input" value="${escapeHtml(note.name)}" data-note-id="${note.id}">
-                            <textarea class="notes-popup-content-input" data-note-id="${note.id}">${escapeHtml(note.content || '')}</textarea>
-                            <div class="notes-popup-editor-actions">
-                                <button class="notes-popup-save-btn" onclick="saveNoteRoom('${note.id}')">Save</button>
-                                <button class="notes-popup-cancel-btn" onclick="cancelEditNote()">Cancel</button>
-                                <button class="notes-popup-delete-btn" onclick="deleteNoteRoom('${note.id}')">Delete</button>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Show note preview
-                    const preview = (note.content || '').substring(0, 100);
-                    noteDiv.innerHTML = `
-                        <div class="notes-popup-item-content" onclick="editNoteRoom('${note.id}')">
-                            <div class="notes-popup-item-name">${escapeHtml(note.name)}</div>
-                            <div class="notes-popup-item-preview">${escapeHtml(preview)}${note.content && note.content.length > 100 ? '...' : ''}</div>
-                        </div>
-                    `;
-                }
-                
-                notesListRoom.appendChild(noteDiv);
-            });
-        }
+        roomBreadcrumbPath.forEach((item, index) => {
+            breadcrumbDiv.innerHTML += `<span class="notes-breadcrumb-separator">/</span><span class="notes-breadcrumb-item" onclick="navigateToRoomFolder('${item.id}')">${escapeHtml(item.name)}</span>`;
+        });
+        
+        notesListRoom.appendChild(breadcrumbDiv);
     }
+    
+    // Items list
+    const itemsList = document.createElement('div');
+    itemsList.style.display = 'flex';
+    itemsList.style.flexDirection = 'column';
+    itemsList.style.gap = '0.5rem';
+    
+    if (items.length === 0) {
+        itemsList.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">No items in this folder.</p>';
+    } else {
+        items.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = `notes-item ${item.type}`;
+            itemDiv.setAttribute('data-id', item.id);
+            itemDiv.setAttribute('data-type', item.type);
+            
+            const icon = item.type === 'folder' ? '📁' : '📄';
+            itemDiv.innerHTML = `
+                <span>${icon}</span>
+                <span style="flex: 1;">${escapeHtml(item.name)}</span>
+                <button class="notes-editor-btn" onclick="event.stopPropagation(); deleteItemRoom('${item.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Delete</button>
+            `;
+            
+            itemDiv.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                if (item.type === 'folder') {
+                    navigateToRoomFolder(item.id);
+                } else {
+                    openRoomNote(item.id);
+                }
+            });
+            
+            itemsList.appendChild(itemDiv);
+        });
+    }
+    
+    notesListRoom.appendChild(itemsList);
 }
 
 // Edit note
