@@ -18,12 +18,13 @@ module.exports = async function handler(req, res) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (!OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OpenAI API key not configured' });
-    }
-
     if (!SUPABASE_SERVICE_KEY) {
         return res.status(500).json({ error: 'Supabase service key not configured' });
+    }
+
+    // At least one news source must be configured
+    if (!NEWS_API_KEY && !OPENAI_API_KEY) {
+        return res.status(500).json({ error: 'Either NEWS_API_KEY or OPEN_AI_KEY must be configured' });
     }
 
     try {
