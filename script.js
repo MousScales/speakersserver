@@ -503,13 +503,31 @@ let currentNewsSlide = 0;
 // Fetch news from Supabase
 async function fetchNews() {
     try {
+        // Check if supabase is available
+        if (typeof supabase === 'undefined' || !supabase) {
+            console.warn('Supabase client not available, using placeholder news');
+            newsItems = [
+                {
+                    title: "News temporarily unavailable",
+                    description: "Initializing news system...",
+                    category: "general"
+                }
+            ];
+            return;
+        }
+
         const { data, error } = await supabase
             .from('news_items')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(10);
         
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase error fetching news:', error);
+            throw error;
+        }
+        
+        console.log('News data fetched:', data);
         
         if (data && data.length > 0) {
             newsItems = data.map(item => ({
@@ -518,13 +536,16 @@ async function fetchNews() {
                 category: item.category || 'general',
                 sourceUrl: item.source_url || null
             }));
+            console.log('News items loaded:', newsItems.length);
         } else {
-            // Fallback to placeholder if no news available
+            // No news in database - show message to trigger fetch
+            console.log('No news items found in database');
             newsItems = [
                 {
-                    title: "Loading today's news...",
-                    description: "Fetching the latest events from around the world.",
-                    category: "general"
+                    title: "No news available yet",
+                    description: "News will be updated daily at 9am. You can manually trigger a refresh by calling the API.",
+                    category: "general",
+                    sourceUrl: null
                 }
             ];
         }
@@ -534,8 +555,9 @@ async function fetchNews() {
         newsItems = [
             {
                 title: "News temporarily unavailable",
-                description: "We're working on bringing you the latest updates.",
-                category: "general"
+                description: `Error: ${error.message || 'Unable to load news'}`,
+                category: "general",
+                sourceUrl: null
             }
         ];
     }
@@ -544,7 +566,13 @@ async function fetchNews() {
 // Initialize news slideshow
 async function initNewsSlideshow() {
     const slideshow = document.getElementById('newsSlideshow');
-    if (!slideshow) return;
+    if (!slideshow) {
+        console.warn('News slideshow element not found');
+        return;
+    }
+    
+    // Show loading state
+    slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading today\'s news...</p>';
     
     // Fetch news from database
     await fetchNews();
@@ -553,6 +581,9 @@ async function initNewsSlideshow() {
         slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No news available</p>';
         return;
     }
+    
+    // Clear loading state
+    slideshow.innerHTML = '';
     
     // Create slides
     const slidesContainer = document.createElement('div');
