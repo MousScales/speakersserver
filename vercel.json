@@ -7,6 +7,12 @@
       "source": "/api/(.*)",
       "destination": "/api/$1"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-news",
+      "schedule": "0 9 * * *"
+    }
   ]
 }
 

@@ -1,7 +1,7 @@
 // Cron job to refresh news at 9am daily
 // This endpoint is called by Vercel Cron
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Verify this is called by Vercel Cron (optional security check)
     const authHeader = req.headers['authorization'];
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

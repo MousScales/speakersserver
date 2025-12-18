@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rtxpelmkxxownbafiwmz.s
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY; // Service role key for admin access
 const OPENAI_API_KEY = process.env.OPEN_AI_KEY;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Only allow GET requests
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
