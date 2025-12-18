@@ -17,17 +17,21 @@
                 <button class="notes-close-btn" id="closeNotesBtn" title="Close Notes">×</button>
             </div>
             <div class="notes-panel-content">
-                <div id="notesCategorySelect" style="margin-bottom: 1rem;">
-                    <label for="notesCategory" style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Category:</label>
-                    <select id="notesCategory" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem;">
-                        <option value="general">General</option>
-                        <option value="debate">Debate</option>
-                        <option value="hot takes">Hot Takes</option>
-                        <option value="chilling">Chilling</option>
-                    </select>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button class="notes-action-btn-room" id="newFolderBtnRoom" title="New Folder">📁</button>
+                    <button class="notes-action-btn-room" id="newNoteBtnRoom" title="New Note">📄</button>
                 </div>
-                <textarea id="notesTextarea" class="notes-textarea-room" placeholder="Add your notes here..."></textarea>
-                <button class="notes-save-btn-room" id="saveNotesBtn">Save Notes</button>
+                <div id="notesBreadcrumbRoom" class="notes-breadcrumb-room" style="margin-bottom: 1rem;"></div>
+                <div id="notesListRoom" style="flex: 1; overflow-y: auto; margin-bottom: 1rem;">
+                    <!-- Notes tree will be dynamically added here -->
+                </div>
+                <div id="notesEditorRoom" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <input type="text" id="noteNameInputRoom" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; font-weight: 600; flex: 1; margin-right: 0.5rem;">
+                        <button class="notes-editor-btn-room" id="saveNoteBtnRoom">Save</button>
+                    </div>
+                    <textarea id="noteContentTextareaRoom" class="notes-textarea-room" placeholder="Start typing your notes..."></textarea>
+                </div>
             </div>
         </aside>
         
