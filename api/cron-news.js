@@ -10,14 +10,17 @@ module.exports = async function handler(req, res) {
 
     try {
         // Call the news API endpoint
+        // In Vercel, use the deployment URL or environment variable
         const baseUrl = process.env.VERCEL_URL 
             ? `https://${process.env.VERCEL_URL}` 
-            : 'http://localhost:3000';
+            : (process.env.NEXT_PUBLIC_VERCEL_URL 
+                ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+                : 'https://speakersserver.vercel.app');
         
         const response = await fetch(`${baseUrl}/api/news`, {
             method: 'GET',
             headers: {
-                'x-api-key': process.env.CRON_SECRET
+                'x-api-key': process.env.CRON_SECRET || ''
             }
         });
 
