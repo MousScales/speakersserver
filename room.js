@@ -1400,6 +1400,54 @@ async function leaveRoom() {
     }
 }
 
+// End meeting (host only)
+async function endMeeting() {
+    if (currentRole !== 'host') {
+        showNotification('Only the host can end the meeting', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to end the meeting? All participants will be removed.')) {
+        return;
+    }
+    
+    try {
+        // Delete all participants
+        const { error: deleteError } = await supabase
+            .from('room_participants')
+            .delete()
+            .eq('room_id', roomId);
+        
+        if (deleteError) throw deleteError;
+        
+        // Send system message
+        await supabase
+            .from('chat_messages')
+            .insert([{
+                room_id: roomId,
+                user_id: 'system',
+                username: 'System',
+                message: '⚠️ The host has ended the meeting.',
+                created_at: new Date().toISOString()
+            }]);
+        
+        // Check if room should be deleted
+        await checkAndDeleteRoom();
+        
+        // Disconnect from LiveKit
+        if (livekitRoom) {
+            await livekitRoom.disconnect();
+        }
+        
+        clearSession();
+        window.location.href = 'index.html';
+        
+    } catch (error) {
+        console.error('Error ending meeting:', error);
+        showNotification('Failed to end meeting', 'error');
+    }
+}
+
 // Transfer host to another participant
 async function transferHost() {
     try {
