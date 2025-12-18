@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS user_notes (
   parent_id UUID REFERENCES user_notes(id) ON DELETE CASCADE,
   category TEXT, -- Optional: can link to room category for quick access
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   -- Note: Unique constraint removed to allow flexibility with null parent_id
   -- Application logic should prevent duplicate names in same folder
 );
