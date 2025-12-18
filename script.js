@@ -433,33 +433,59 @@ function subscribeToRooms() {
         });
 }
 
-// Update login button based on auth status
+// Update login button and profile picture based on auth status
 async function updateLoginButton() {
     if (!loginBtn) return;
     if (typeof supabase === 'undefined' || supabase === null) return; // Supabase not initialized on this page
     
     const { data: { session } } = await supabase.auth.getSession();
-    const settingsBtn = document.getElementById('settingsBtn');
+    const profilePictureBtn = document.getElementById('profilePictureBtn');
+    const headerProfilePicture = document.getElementById('headerProfilePicture');
+    const headerProfileInitial = document.getElementById('headerProfileInitial');
     
     if (session) {
-        loginBtn.textContent = 'Logout';
-        loginBtn.href = '#';
-        loginBtn.onclick = async (e) => {
-            e.preventDefault();
-            await supabase.auth.signOut();
-            window.location.reload();
-        };
-        // Show settings button when logged in
-        if (settingsBtn) {
-            settingsBtn.style.display = 'inline-block';
+        // Hide login button
+        loginBtn.style.display = 'none';
+        
+        // Show profile picture
+        if (profilePictureBtn) {
+            profilePictureBtn.style.display = 'flex';
+        }
+        
+        // Load user profile to get profile picture
+        const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('profile_picture_url, display_name')
+            .eq('id', session.user.id)
+            .single();
+        
+        if (profile) {
+            if (profile.profile_picture_url && headerProfilePicture) {
+                headerProfilePicture.src = profile.profile_picture_url;
+                headerProfilePicture.style.display = 'block';
+                if (headerProfileInitial) {
+                    headerProfileInitial.style.display = 'none';
+                }
+            } else if (headerProfileInitial) {
+                // Show initial if no profile picture
+                const initial = (profile.display_name || 'U').charAt(0).toUpperCase();
+                headerProfileInitial.textContent = initial;
+                headerProfileInitial.style.display = 'flex';
+                if (headerProfilePicture) {
+                    headerProfilePicture.style.display = 'none';
+                }
+            }
         }
     } else {
+        // Show login button
+        loginBtn.style.display = 'inline-block';
         loginBtn.textContent = 'Login';
         loginBtn.href = 'auth.html';
         loginBtn.onclick = null;
-        // Hide settings button when not logged in
-        if (settingsBtn) {
-            settingsBtn.style.display = 'none';
+        
+        // Hide profile picture
+        if (profilePictureBtn) {
+            profilePictureBtn.style.display = 'none';
         }
     }
 }

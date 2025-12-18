@@ -142,6 +142,53 @@ header .container {
     opacity: 0.7;
 }
 
+/* Profile Picture in Header */
+.profile-picture-header {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border-color);
+    background: var(--bg-color);
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.profile-picture-header:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-picture-header img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-picture-header span {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+[data-theme="light"] .profile-picture-header span {
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    color: #000000;
+}
+
 /* Info Modal Content */
 .info-content {
     padding: 1rem 0;
