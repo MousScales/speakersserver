@@ -203,6 +203,8 @@ let isAuthenticated = false;
             await updateUIForRole();
             subscribeToChat();
             subscribeToParticipants();
+            // Setup notes realtime subscription
+            setupNotesRealtime();
         }
     } else {
         // No existing session, join as new participant (no modal needed)
@@ -211,6 +213,8 @@ let isAuthenticated = false;
         await updateUIForRole();
         subscribeToChat();
         subscribeToParticipants();
+        // Setup notes realtime subscription (will only work if user logs in later)
+        setupNotesRealtime();
     }
 })();
 
