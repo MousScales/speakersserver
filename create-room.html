@@ -89,8 +89,7 @@
             z-index: 0;
         }
 
-        .step-indicator::after {
-            content: '';
+        .step-progress-bar {
             position: absolute;
             top: 20px;
             left: 0;
@@ -310,6 +309,7 @@
             <div class="wizard-container">
                 <!-- Step Indicator -->
                 <div class="step-indicator" id="stepIndicator">
+                    <div class="step-progress-bar" id="stepProgressBar"></div>
                     <div class="step-item active" data-step="1">
                         <div class="step-number">1</div>
                         <div class="step-label">Title</div>
@@ -478,8 +478,10 @@
         // Update step indicator progress
         function updateStepIndicator() {
             const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
-            stepIndicator.style.setProperty('--progress', `${progress}%`);
-            stepIndicator.querySelector('::after').style.width = `${progress}%`;
+            const progressBar = document.getElementById('stepProgressBar');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
 
             // Update step items
             document.querySelectorAll('.step-item').forEach((item, index) => {
@@ -491,12 +493,6 @@
                     item.classList.add('active');
                 }
             });
-
-            // Update progress bar
-            const progressBar = stepIndicator.querySelector('::after');
-            if (progressBar) {
-                progressBar.style.width = `${progress}%`;
-            }
         }
 
         // Show step
