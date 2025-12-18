@@ -73,8 +73,14 @@ async function displayRoomsByCategory() {
                 ? `<button class="view-all-btn" data-category="${cat.key}">View all</button>`
                 : '';
             
+            // Add color class for specific categories
+            const categoryClass = cat.key === 'hot-takes' ? 'category-hot-takes-text' 
+                : cat.key === 'debate' ? 'category-debate-text'
+                : cat.key === 'chilling' ? 'category-chilling-text'
+                : '';
+            
             header.innerHTML = `
-                <h3 class="category-section-title">${cat.name}</h3>
+                <h3 class="category-section-title ${categoryClass}">${cat.name}</h3>
                 ${viewAllBtn}
             `;
             
