@@ -518,11 +518,18 @@
             if (!session) return;
             
             // Load items in current folder
-            const { data: items, error } = await supabase
+            let query = supabase
                 .from('user_notes')
                 .select('*')
-                .eq('user_id', session.user.id)
-                .eq('parent_id', folderId || null)
+                .eq('user_id', session.user.id);
+            
+            if (folderId) {
+                query = query.eq('parent_id', folderId);
+            } else {
+                query = query.is('parent_id', null);
+            }
+            
+            const { data: items, error } = await query
                 .order('type', { ascending: false }) // Folders first
                 .order('name', { ascending: true });
             
