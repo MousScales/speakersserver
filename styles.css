@@ -41,11 +41,6 @@ body {
     padding: 0 20px;
 }
 
-header .container {
-    padding: 0;
-    max-width: 100%;
-}
-
 /* Header */
 header {
     background: var(--bg-color);
@@ -64,6 +59,8 @@ header .container {
     align-items: center;
     gap: 1rem;
     position: relative;
+    padding: 0;
+    max-width: 100%;
 }
 
 
