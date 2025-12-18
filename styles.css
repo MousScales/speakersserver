@@ -583,6 +583,19 @@ header .container {
     letter-spacing: -0.02em;
 }
 
+/* Category text colors */
+.category-section-title.category-hot-takes-text {
+    color: #ef4444;
+}
+
+.category-section-title.category-debate-text {
+    color: #eab308;
+}
+
+.category-section-title.category-chilling-text {
+    color: #3b82f6;
+}
+
 .view-all-btn {
     padding: 0.5rem 1rem;
     background: transparent;

@@ -2774,6 +2774,37 @@ function playNotificationSound() {
 // Simple Notes Popup Functionality
 let selectedRoomNoteId = null;
 let editingNoteId = null;
+let notesChannel = null;
+
+// Setup real-time subscription for notes
+async function setupNotesRealtime() {
+    if (!supabase || !supabase.auth) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    // Clean up existing channel if any
+    if (notesChannel) {
+        supabase.removeChannel(notesChannel);
+    }
+    
+    // Create channel for user notes
+    notesChannel = supabase
+        .channel('user_notes_channel_' + session.user.id)
+        .on('postgres_changes', {
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'user_notes',
+            filter: `user_id=eq.${session.user.id}`
+        }, (payload) => {
+            console.log('Notes changed:', payload);
+            // Reload notes if modal is open
+            if (notesModal && notesModal.style.display === 'flex') {
+                loadNotesForRoom();
+            }
+        })
+        .subscribe();
+}
 
 // Open notes popup
 if (notesBtn) {
@@ -2781,6 +2812,7 @@ if (notesBtn) {
         if (notesModal) {
             notesModal.style.display = 'flex';
             loadNotesForRoom();
+            setupNotesRealtime();
         }
     });
 }
