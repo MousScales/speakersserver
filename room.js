@@ -199,6 +199,11 @@ let isAuthenticated = false;
         await updateUIForRole();
         subscribeToChat();
         subscribeToParticipants();
+        
+        // Add event listener for end meeting button
+        if (endMeetingBtn) {
+            endMeetingBtn.addEventListener('click', endMeeting);
+        }
     }
 })();
 
