@@ -710,6 +710,7 @@ async function updateLoginButton() {
 // Initialize the app
 async function init() {
     await updateLoginButton();
+    initNewsSlideshow();
     await loadRooms();
     subscribeToRooms();
     
