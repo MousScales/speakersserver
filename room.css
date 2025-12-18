@@ -35,63 +35,75 @@
     color: var(--text-primary);
 }
 
-/* Notes Panel - slides from left */
-.notes-panel {
+/* Notes Modal - popup like settings */
+.notes-modal-room {
     position: fixed;
-    left: -400px;
     top: 0;
-    width: 400px;
-    height: 100vh;
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
     z-index: 2000;
-    transition: left 0.3s ease;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+}
+
+.notes-modal-room.show {
+    display: flex;
+}
+
+.notes-modal-content-room {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
-.notes-panel.open {
-    left: 0;
-}
-
-.notes-panel-header {
-    padding: 1rem 1.5rem;
+.notes-modal-header-room {
+    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: var(--bg-tertiary);
+    flex-shrink: 0;
 }
 
-.notes-panel-header h2 {
+.notes-modal-header-room h2 {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
 }
 
-.notes-close-btn {
+.notes-close-btn-room {
     background: none;
     border: none;
     color: var(--text-primary);
-    font-size: 2rem;
     cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
+    padding: 0.5rem;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: background 0.2s;
 }
 
-.notes-close-btn:hover {
+.notes-close-btn-room:hover {
     background: var(--bg-secondary);
 }
 
-.notes-panel-content {
+.notes-modal-body-room {
     flex: 1;
     padding: 1.5rem;
     overflow-y: auto;

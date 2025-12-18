@@ -10,30 +10,58 @@
 </head>
 <body>
     <div class="room-container">
-        <!-- Notes Panel (slides from left) -->
-        <aside class="notes-panel" id="notesPanel">
-            <div class="notes-panel-header">
-                <h2>My Notes</h2>
-                <button class="notes-close-btn" id="closeNotesBtn" title="Close Notes">×</button>
-            </div>
-            <div class="notes-panel-content">
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                    <button class="notes-action-btn-room" id="newFolderBtnRoom" title="New Folder">📁</button>
-                    <button class="notes-action-btn-room" id="newNoteBtnRoom" title="New Note">📄</button>
+        <!-- Notes Modal (popup like settings) -->
+        <div id="notesModal" class="notes-modal-room">
+            <div class="notes-modal-content-room">
+                <div class="notes-modal-header-room">
+                    <h2>My Notes</h2>
+                    <button class="notes-close-btn-room" id="closeNotesBtn" title="Close Notes">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
-                <div id="notesBreadcrumbRoom" class="notes-breadcrumb-room" style="margin-bottom: 1rem;"></div>
-                <div id="notesListRoom" style="flex: 1; overflow-y: auto; margin-bottom: 1rem;">
-                    <!-- Notes tree will be dynamically added here -->
-                </div>
-                <div id="notesEditorRoom" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <input type="text" id="noteNameInputRoom" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; font-weight: 600; flex: 1; margin-right: 0.5rem;">
-                        <button class="notes-editor-btn-room" id="saveNoteBtnRoom">Save</button>
+                <div class="notes-modal-body-room">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button class="notes-action-btn-room" id="newFolderBtnRoom" title="New Folder">📁 New Folder</button>
+                        <button class="notes-action-btn-room" id="newNoteBtnRoom" title="New Note">📄 New Note</button>
                     </div>
-                    <textarea id="noteContentTextareaRoom" class="notes-textarea-room" placeholder="Start typing your notes..."></textarea>
+                    <div id="notesBreadcrumbRoom" class="notes-breadcrumb-room" style="margin-bottom: 1rem;"></div>
+                    <div id="notesListRoom" style="flex: 1; overflow-y: auto; margin-bottom: 1rem;">
+                        <!-- Notes tree will be dynamically added here -->
+                    </div>
                 </div>
             </div>
-        </aside>
+        </div>
+        
+        <!-- Note Editor Modal (PDF-like popup) -->
+        <div id="noteEditorModalRoom" class="note-editor-modal-room">
+            <div class="note-editor-modal-toolbar-room">
+                <div class="note-editor-modal-toolbar-left-room">
+                    <input type="text" id="noteNameInputRoom" class="note-editor-modal-name-input-room" placeholder="Note name...">
+                </div>
+                <div class="note-editor-modal-toolbar-right-room">
+                    <button class="notes-editor-btn-room" onclick="saveCurrentNoteRoom()">Save</button>
+                    <button class="notes-editor-btn-icon-room delete" onclick="deleteCurrentNoteRoom()" title="Delete">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                    <button class="notes-editor-btn-icon-room close" onclick="closeNoteEditorRoom()" title="Close">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="note-editor-modal-page-room">
+                <textarea id="noteContentTextareaRoom" class="note-editor-modal-textarea-room" placeholder="Start typing your notes..."></textarea>
+            </div>
+        </div>
         
         <!-- Main Content Area -->
         <main class="room-main">

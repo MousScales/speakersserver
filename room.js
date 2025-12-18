@@ -22,16 +22,15 @@ const goHomeBtn = document.getElementById('goHomeBtn');
 const micBtn = document.getElementById('micBtn');
 const screenShareBtn = document.getElementById('screenShareBtn');
 const notesBtn = document.getElementById('notesBtn');
-const notesPanel = document.getElementById('notesPanel');
+const notesModal = document.getElementById('notesModal');
 const closeNotesBtn = document.getElementById('closeNotesBtn');
 const notesListRoom = document.getElementById('notesListRoom');
 const notesBreadcrumbRoom = document.getElementById('notesBreadcrumbRoom');
-const notesEditorRoom = document.getElementById('notesEditorRoom');
+const noteEditorModalRoom = document.getElementById('noteEditorModalRoom');
 const noteNameInputRoom = document.getElementById('noteNameInputRoom');
 const noteContentTextareaRoom = document.getElementById('noteContentTextareaRoom');
 const newFolderBtnRoom = document.getElementById('newFolderBtnRoom');
 const newNoteBtnRoom = document.getElementById('newNoteBtnRoom');
-const saveNoteBtnRoom = document.getElementById('saveNoteBtnRoom');
 const participantsBtn = document.getElementById('participantsBtn');
 const participantCount = document.getElementById('participantCount');
 const participantsPanel = document.getElementById('participantsPanel');
@@ -2782,41 +2781,34 @@ let currentRoomFolderId = null;
 let selectedRoomNoteId = null;
 let roomBreadcrumbPath = [];
 
-// Open notes panel
+// Open notes modal
 if (notesBtn) {
     notesBtn.addEventListener('click', () => {
-        if (notesPanel) {
-            notesPanel.classList.add('open');
-            // Create overlay
-            let overlay = document.getElementById('notesOverlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'notesOverlay';
-                overlay.className = 'notes-overlay';
-                overlay.addEventListener('click', () => {
-                    closeNotesPanel();
-                });
-                document.body.appendChild(overlay);
-            }
-            overlay.classList.add('show');
+        if (notesModal) {
+            notesModal.classList.add('show');
             loadNotesForRoom();
         }
     });
 }
 
-// Close notes panel
-function closeNotesPanel() {
-    if (notesPanel) {
-        notesPanel.classList.remove('open');
-    }
-    const overlay = document.getElementById('notesOverlay');
-    if (overlay) {
-        overlay.classList.remove('show');
+// Close notes modal
+function closeNotesModal() {
+    if (notesModal) {
+        notesModal.classList.remove('show');
     }
 }
 
 if (closeNotesBtn) {
-    closeNotesBtn.addEventListener('click', closeNotesPanel);
+    closeNotesBtn.addEventListener('click', closeNotesModal);
+}
+
+// Close modal when clicking outside
+if (notesModal) {
+    notesModal.addEventListener('click', (e) => {
+        if (e.target === notesModal) {
+            closeNotesModal();
+        }
+    });
 }
 
 // Load notes for room
@@ -2924,12 +2916,12 @@ window.navigateToRoomFolder = async function(folderId) {
     }
     
     await loadNotesForRoom(folderId);
-    if (notesEditorRoom) {
-        notesEditorRoom.style.display = 'none';
+    if (noteEditorModalRoom) {
+        noteEditorModalRoom.classList.remove('show');
     }
 };
 
-// Open note in room
+// Open note in room (show in modal)
 window.openRoomNote = async function(noteId) {
     if (!supabase || !supabase.auth) return;
     
@@ -2953,12 +2945,123 @@ window.openRoomNote = async function(noteId) {
     if (noteContentTextareaRoom) {
         noteContentTextareaRoom.value = note.content || '';
     }
-    if (notesEditorRoom) {
-        notesEditorRoom.style.display = 'block';
+    if (noteEditorModalRoom) {
+        noteEditorModalRoom.classList.add('show');
+        // Focus on textarea
+        setTimeout(() => {
+            if (noteContentTextareaRoom) {
+                noteContentTextareaRoom.focus();
+            }
+        }, 100);
     }
     
     // Update selected state
     await loadNotesForRoom(currentRoomFolderId);
+};
+
+// Close note editor modal
+window.closeNoteEditorRoom = function() {
+    if (noteEditorModalRoom) {
+        noteEditorModalRoom.classList.remove('show');
+    }
+    selectedRoomNoteId = null;
+};
+
+// Close modal when clicking outside
+if (noteEditorModalRoom) {
+    noteEditorModalRoom.addEventListener('click', (e) => {
+        if (e.target === noteEditorModalRoom) {
+            closeNoteEditorRoom();
+        }
+    });
+}
+
+// Save current note in room
+window.saveCurrentNoteRoom = async function() {
+    if (!selectedRoomNoteId) return;
+    
+    if (!supabase || !supabase.auth) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    if (!noteNameInputRoom || !noteContentTextareaRoom) return;
+    
+    const name = noteNameInputRoom.value.trim();
+    const content = noteContentTextareaRoom.value;
+    
+    if (!name) {
+        alert('Note name cannot be empty');
+        return;
+    }
+    
+    const saveBtn = document.querySelector('.note-editor-modal-toolbar-right-room .notes-editor-btn-room');
+    const originalText = saveBtn ? saveBtn.textContent : 'Save';
+    
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('user_notes')
+            .update({
+                name: name,
+                content: content,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', selectedRoomNoteId)
+            .eq('user_id', session.user.id);
+        
+        if (error) throw error;
+        
+        // Show saved indicator
+        if (saveBtn) {
+            saveBtn.textContent = 'Saved!';
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }, 2000);
+        }
+        
+        await loadNotesForRoom(currentRoomFolderId);
+    } catch (error) {
+        console.error('Error saving note:', error);
+        alert('Failed to save note. Please try again.');
+        if (saveBtn) {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+};
+
+// Delete current note in room
+window.deleteCurrentNoteRoom = async function() {
+    if (!selectedRoomNoteId) return;
+    
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    
+    if (!supabase || !supabase.auth) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    try {
+        const { error } = await supabase
+            .from('user_notes')
+            .delete()
+            .eq('id', selectedRoomNoteId)
+            .eq('user_id', session.user.id);
+        
+        if (error) throw error;
+        
+        closeNoteEditorRoom();
+        await loadNotesForRoom(currentRoomFolderId);
+    } catch (error) {
+        console.error('Error deleting note:', error);
+        alert('Failed to delete note. Please try again.');
+    }
 };
 
 // Create new folder in room
