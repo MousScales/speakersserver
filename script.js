@@ -497,35 +497,61 @@ async function createRoomCard(room) {
 }
 
 // News slideshow data
-const newsItems = [
-    {
-        title: "Breaking: Global Climate Summit Reaches Historic Agreement",
-        description: "World leaders unite on ambitious carbon reduction targets, marking a turning point in international climate policy.",
-        link: "#"
-    },
-    {
-        title: "Tech Innovation: AI Breakthrough in Medical Diagnosis",
-        description: "New AI system achieves 98% accuracy in early disease detection, revolutionizing healthcare diagnostics.",
-        link: "#"
-    },
-    {
-        title: "Sports: Championship Finals Set for This Weekend",
-        description: "Top teams prepare for the ultimate showdown after an intense season of competition.",
-        link: "#"
-    },
-    {
-        title: "Entertainment: Award-Winning Film Premieres Worldwide",
-        description: "Critically acclaimed movie opens in theaters, receiving standing ovations from audiences.",
-        link: "#"
-    }
-];
-
+let newsItems = [];
 let currentNewsSlide = 0;
 
+// Fetch news from Supabase
+async function fetchNews() {
+    try {
+        const { data, error } = await supabase
+            .from('news_items')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            newsItems = data.map(item => ({
+                title: item.title,
+                description: item.description,
+                category: item.category || 'general'
+            }));
+        } else {
+            // Fallback to placeholder if no news available
+            newsItems = [
+                {
+                    title: "Loading today's news...",
+                    description: "Fetching the latest events from around the world.",
+                    category: "general"
+                }
+            ];
+        }
+    } catch (error) {
+        console.error('Error fetching news:', error);
+        // Fallback to placeholder on error
+        newsItems = [
+            {
+                title: "News temporarily unavailable",
+                description: "We're working on bringing you the latest updates.",
+                category: "general"
+            }
+        ];
+    }
+}
+
 // Initialize news slideshow
-function initNewsSlideshow() {
+async function initNewsSlideshow() {
     const slideshow = document.getElementById('newsSlideshow');
     if (!slideshow) return;
+    
+    // Fetch news from database
+    await fetchNews();
+    
+    if (newsItems.length === 0) {
+        slideshow.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No news available</p>';
+        return;
+    }
     
     // Create slides
     const slidesContainer = document.createElement('div');
@@ -540,7 +566,6 @@ function initNewsSlideshow() {
             <div class="news-slide-content">
                 <h3 class="news-slide-title">${escapeHtml(news.title)}</h3>
                 <p class="news-slide-description">${escapeHtml(news.description)}</p>
-                <a href="${news.link}" class="news-slide-link">Read more →</a>
             </div>
         `;
         slidesContainer.appendChild(slide);
@@ -563,8 +588,10 @@ function initNewsSlideshow() {
     
     // Auto-advance slides
     setInterval(() => {
-        currentNewsSlide = (currentNewsSlide + 1) % newsItems.length;
-        goToNewsSlide(currentNewsSlide);
+        if (newsItems.length > 0) {
+            currentNewsSlide = (currentNewsSlide + 1) % newsItems.length;
+            goToNewsSlide(currentNewsSlide);
+        }
     }, 5000); // Change slide every 5 seconds
 }
 
