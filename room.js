@@ -2776,3 +2776,315 @@ function playNotificationSound() {
         console.log('Audio notification not available');
     }
 }
+
+// Notes panel functionality - Google Drive-like structure
+let currentRoomFolderId = null;
+let selectedRoomNoteId = null;
+let roomBreadcrumbPath = [];
+
+// Open notes panel
+if (notesBtn) {
+    notesBtn.addEventListener('click', () => {
+        if (notesPanel) {
+            notesPanel.classList.add('open');
+            // Create overlay
+            let overlay = document.getElementById('notesOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'notesOverlay';
+                overlay.className = 'notes-overlay';
+                overlay.addEventListener('click', () => {
+                    closeNotesPanel();
+                });
+                document.body.appendChild(overlay);
+            }
+            overlay.classList.add('show');
+            loadNotesForRoom();
+        }
+    });
+}
+
+// Close notes panel
+function closeNotesPanel() {
+    if (notesPanel) {
+        notesPanel.classList.remove('open');
+    }
+    const overlay = document.getElementById('notesOverlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+    }
+}
+
+if (closeNotesBtn) {
+    closeNotesBtn.addEventListener('click', closeNotesPanel);
+}
+
+// Load notes for room
+async function loadNotesForRoom(folderId = null) {
+    if (!supabase || !supabase.auth) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        if (notesListRoom) {
+            notesListRoom.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">Please log in to use notes.</p>';
+        }
+        return;
+    }
+    
+    // Load items in current folder
+    let query = supabase
+        .from('user_notes')
+        .select('*')
+        .eq('user_id', session.user.id);
+    
+    if (folderId) {
+        query = query.eq('parent_id', folderId);
+    } else {
+        query = query.is('parent_id', null);
+    }
+    
+    const { data: items, error } = await query
+        .order('type', { ascending: false }) // Folders first
+        .order('name', { ascending: true });
+    
+    if (error) {
+        console.error('Error loading notes:', error);
+        return;
+    }
+    
+    // Render breadcrumb
+    if (notesBreadcrumbRoom) {
+        notesBreadcrumbRoom.innerHTML = '<span class="notes-breadcrumb-item-room" onclick="navigateToRoomFolder(null)">Home</span>';
+        
+        roomBreadcrumbPath.forEach((item) => {
+            notesBreadcrumbRoom.innerHTML += `<span style="color: var(--text-secondary);"> / </span><span class="notes-breadcrumb-item-room" onclick="navigateToRoomFolder('${item.id}')">${escapeHtml(item.name)}</span>`;
+        });
+    }
+    
+    // Render items
+    if (notesListRoom) {
+        notesListRoom.innerHTML = '';
+        
+        if (!items || items.length === 0) {
+            notesListRoom.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">No items in this folder</p>';
+        } else {
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `notes-item-room ${item.type === 'folder' ? 'folder' : ''} ${selectedRoomNoteId === item.id ? 'selected' : ''}`;
+                itemDiv.setAttribute('data-id', item.id);
+                itemDiv.setAttribute('data-type', item.type);
+                
+                const icon = item.type === 'folder' ? '📁' : '📄';
+                itemDiv.innerHTML = `<span>${icon}</span><span style="flex: 1;">${escapeHtml(item.name)}</span>`;
+                
+                itemDiv.addEventListener('click', () => {
+                    if (item.type === 'folder') {
+                        navigateToRoomFolder(item.id);
+                    } else {
+                        openRoomNote(item.id);
+                    }
+                });
+                
+                notesListRoom.appendChild(itemDiv);
+            });
+        }
+    }
+}
+
+// Navigate to folder in room
+window.navigateToRoomFolder = async function(folderId) {
+    currentRoomFolderId = folderId;
+    selectedRoomNoteId = null;
+    
+    // Update breadcrumb
+    if (!folderId) {
+        roomBreadcrumbPath = [];
+    } else {
+        // Load folder path
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            let currentId = folderId;
+            roomBreadcrumbPath = [];
+            while (currentId) {
+                const { data: folder } = await supabase
+                    .from('user_notes')
+                    .select('id, name, parent_id')
+                    .eq('id', currentId)
+                    .eq('user_id', session.user.id)
+                    .single();
+                
+                if (folder) {
+                    roomBreadcrumbPath.unshift(folder);
+                    currentId = folder.parent_id;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    
+    await loadNotesForRoom(folderId);
+    if (notesEditorRoom) {
+        notesEditorRoom.style.display = 'none';
+    }
+};
+
+// Open note in room
+window.openRoomNote = async function(noteId) {
+    if (!supabase || !supabase.auth) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    selectedRoomNoteId = noteId;
+    
+    const { data: note } = await supabase
+        .from('user_notes')
+        .select('*')
+        .eq('id', noteId)
+        .eq('user_id', session.user.id)
+        .single();
+    
+    if (!note) return;
+    
+    if (noteNameInputRoom) {
+        noteNameInputRoom.value = note.name;
+    }
+    if (noteContentTextareaRoom) {
+        noteContentTextareaRoom.value = note.content || '';
+    }
+    if (notesEditorRoom) {
+        notesEditorRoom.style.display = 'block';
+    }
+    
+    // Update selected state
+    await loadNotesForRoom(currentRoomFolderId);
+};
+
+// Create new folder in room
+if (newFolderBtnRoom) {
+    newFolderBtnRoom.addEventListener('click', async () => {
+        const name = prompt('Enter folder name:');
+        if (!name || !name.trim()) return;
+        
+        if (!supabase || !supabase.auth) return;
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            alert('Please log in to create folders');
+            return;
+        }
+        
+        try {
+            const { error } = await supabase
+                .from('user_notes')
+                .insert({
+                    user_id: session.user.id,
+                    name: name.trim(),
+                    type: 'folder',
+                    parent_id: currentRoomFolderId
+                });
+            
+            if (error) throw error;
+            
+            await loadNotesForRoom(currentRoomFolderId);
+        } catch (error) {
+            console.error('Error creating folder:', error);
+            alert('Failed to create folder. Please try again.');
+        }
+    });
+}
+
+// Create new note in room
+if (newNoteBtnRoom) {
+    newNoteBtnRoom.addEventListener('click', async () => {
+        const name = prompt('Enter note name:');
+        if (!name || !name.trim()) return;
+        
+        if (!supabase || !supabase.auth) return;
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            alert('Please log in to create notes');
+            return;
+        }
+        
+        try {
+            const { data, error } = await supabase
+                .from('user_notes')
+                .insert({
+                    user_id: session.user.id,
+                    name: name.trim(),
+                    type: 'note',
+                    parent_id: currentRoomFolderId,
+                    content: ''
+                })
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            selectedRoomNoteId = data.id;
+            await openRoomNote(data.id);
+        } catch (error) {
+            console.error('Error creating note:', error);
+            alert('Failed to create note. Please try again.');
+        }
+    });
+}
+
+// Save note in room
+if (saveNoteBtnRoom) {
+    saveNoteBtnRoom.addEventListener('click', async () => {
+        if (!selectedRoomNoteId) return;
+        
+        if (!supabase || !supabase.auth) return;
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const name = noteNameInputRoom ? noteNameInputRoom.value.trim() : '';
+        const content = noteContentTextareaRoom ? noteContentTextareaRoom.value : '';
+        
+        if (!name) {
+            alert('Note name cannot be empty');
+            return;
+        }
+        
+        saveNoteBtnRoom.disabled = true;
+        saveNoteBtnRoom.textContent = 'Saving...';
+        
+        try {
+            const { error } = await supabase
+                .from('user_notes')
+                .update({
+                    name: name,
+                    content: content,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', selectedRoomNoteId)
+                .eq('user_id', session.user.id);
+            
+            if (error) throw error;
+            
+            saveNoteBtnRoom.textContent = 'Saved!';
+            setTimeout(() => {
+                saveNoteBtnRoom.textContent = 'Save';
+            }, 2000);
+            
+            await loadNotesForRoom(currentRoomFolderId);
+        } catch (error) {
+            console.error('Error saving note:', error);
+            alert('Failed to save note. Please try again.');
+            saveNoteBtnRoom.textContent = 'Save';
+        } finally {
+            saveNoteBtnRoom.disabled = false;
+        }
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
