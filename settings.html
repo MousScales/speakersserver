@@ -350,6 +350,21 @@
                 </div>
             </div>
             
+            <!-- Note Editor Modal -->
+            <div id="noteEditorModal" class="note-editor-modal" style="display: none;">
+                <div class="note-editor-modal-content">
+                    <div class="note-editor-modal-header">
+                        <input type="text" id="noteNameInputModal" placeholder="Note name..." style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-color); font-size: 1.25rem; font-weight: 600; width: 100%; max-width: 500px; box-sizing: border-box;">
+                        <div class="note-editor-modal-actions">
+                            <button class="notes-editor-btn" onclick="saveCurrentNote()">Save</button>
+                            <button class="notes-editor-btn delete" onclick="deleteCurrentNote()">Delete</button>
+                            <button class="notes-editor-btn" onclick="closeNoteEditor()">Close</button>
+                        </div>
+                    </div>
+                    <textarea id="noteContentTextareaModal" class="note-editor-modal-textarea" placeholder="Start typing your notes..."></textarea>
+                </div>
+            </div>
+            
             <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
                 <button type="button" class="logout-btn" id="logoutBtn">Logout</button>
             </div>
@@ -594,11 +609,6 @@
             });
             
             notesContainer.appendChild(itemsList);
-            
-            // Editor (if note is selected)
-            if (selectedNoteId) {
-                renderNoteEditor(selectedNoteId);
-            }
         }
         
         async function renderNoteEditor(noteId) {
@@ -616,27 +626,34 @@
             
             if (!note) return;
             
-            const editorDiv = document.createElement('div');
-            editorDiv.className = 'notes-editor';
-            editorDiv.id = 'notesEditor';
-            editorDiv.innerHTML = `
-                <div class="notes-editor-header">
-                    <input type="text" id="noteNameInput" value="${escapeHtml(note.name)}" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-color); font-size: 1.1rem; font-weight: 600; width: 100%; max-width: 400px;">
-                    <div class="notes-editor-actions">
-                        <button class="notes-editor-btn" onclick="saveCurrentNote()">Save</button>
-                        <button class="notes-editor-btn delete" onclick="deleteItem('${note.id}')">Delete</button>
-                    </div>
-                </div>
-                <textarea id="noteContentTextarea" class="notes-textarea" placeholder="Start typing your notes...">${escapeHtml(note.content || '')}</textarea>
-            `;
+            // Show modal and populate with note data
+            const modal = document.getElementById('noteEditorModal');
+            const nameInput = document.getElementById('noteNameInputModal');
+            const contentTextarea = document.getElementById('noteContentTextareaModal');
             
-            // Remove existing editor
-            const existingEditor = document.getElementById('notesEditor');
-            if (existingEditor) {
-                existingEditor.remove();
+            if (modal && nameInput && contentTextarea) {
+                nameInput.value = note.name;
+                contentTextarea.value = note.content || '';
+                modal.style.display = 'flex';
             }
-            
-            notesContainer.appendChild(editorDiv);
+        }
+        
+        window.closeNoteEditor = function() {
+            const modal = document.getElementById('noteEditorModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            selectedNoteId = null;
+        };
+        
+        // Close modal when clicking outside
+        const noteEditorModal = document.getElementById('noteEditorModal');
+        if (noteEditorModal) {
+            noteEditorModal.addEventListener('click', (e) => {
+                if (e.target === noteEditorModal) {
+                    closeNoteEditor();
+                }
+            });
         }
         
         window.createNewFolder = async function() {
@@ -762,8 +779,8 @@
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
             
-            const nameInput = document.getElementById('noteNameInput');
-            const contentTextarea = document.getElementById('noteContentTextarea');
+            const nameInput = document.getElementById('noteNameInputModal');
+            const contentTextarea = document.getElementById('noteContentTextareaModal');
             
             if (!nameInput || !contentTextarea) return;
             
@@ -773,6 +790,14 @@
             if (!name) {
                 alert('Note name cannot be empty');
                 return;
+            }
+            
+            const saveBtn = document.querySelector('.note-editor-modal-actions .notes-editor-btn');
+            const originalText = saveBtn ? saveBtn.textContent : 'Save';
+            
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
             }
             
             try {
@@ -789,12 +814,11 @@
                 if (error) throw error;
                 
                 // Show saved indicator
-                const saveBtn = document.querySelector('.notes-editor-btn');
                 if (saveBtn) {
-                    const originalText = saveBtn.textContent;
                     saveBtn.textContent = 'Saved!';
                     setTimeout(() => {
                         saveBtn.textContent = originalText;
+                        saveBtn.disabled = false;
                     }, 2000);
                 }
                 
@@ -802,7 +826,20 @@
             } catch (error) {
                 console.error('Error saving note:', error);
                 alert('Failed to save note. Please try again.');
+                if (saveBtn) {
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                }
             }
+        };
+        
+        window.deleteCurrentNote = async function() {
+            if (!selectedNoteId) return;
+            
+            if (!confirm('Are you sure you want to delete this note?')) return;
+            
+            await deleteItem(selectedNoteId);
+            closeNoteEditor();
         };
         
         window.deleteItem = async function(itemId) {
