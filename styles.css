@@ -57,6 +57,21 @@ header .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+}
+
+.header-quote {
+    flex: 1;
+    text-align: center;
+}
+
+.header-quote p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0.01em;
 }
 
 .header-actions {
