@@ -249,17 +249,27 @@ async function joinRoom() {
     if (speakersContainer) speakersContainer.style.display = 'grid';
     
     try {
-        // Check if already a participant
-        const { data: existingParticipant } = await supabase
+        // Check if already a participant (use maybeSingle to handle not found)
+        const { data: existingParticipant, error: checkError } = await supabase
             .from('room_participants')
             .select('*')
             .eq('room_id', roomId)
             .eq('user_id', currentUserId)
-            .single();
+            .maybeSingle();
+        
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" which is fine
+            throw checkError;
+        }
         
         if (existingParticipant) {
-            // Already a participant, update role if needed
+            // Already a participant, update role and username if needed
             currentRole = existingParticipant.role;
+            // Update username in case it changed
+            await supabase
+                .from('room_participants')
+                .update({ username: currentUsername })
+                .eq('room_id', roomId)
+                .eq('user_id', currentUserId);
             console.log('✅ Already a participant, role:', currentRole);
         } else {
             // Add as new participant
