@@ -31,19 +31,28 @@ module.exports = async function handler(req, res) {
 
         // Call OpenAI to get today's news
         const today = new Date().toISOString().split('T')[0];
-        const prompt = `Generate a JSON array of 5-7 recent news events from around the world that happened today (${today}). Focus on POLITICAL and CONTROVERSIAL topics that spark debate and discussion. Prioritize:
-- Political conflicts, policy debates, and government decisions
-- Controversial social issues, protests, and civil unrest
-- International tensions, diplomatic disputes, and trade wars
-- Divisive policy changes, elections, and political scandals
-- Social justice movements, civil rights issues, and cultural conflicts
-- Economic policies that divide opinion (taxes, regulations, etc.)
+        const prompt = `Generate a JSON array of 5-7 recent news events from around the world that happened today (${today}). 
+
+CRITICAL: Focus EXCLUSIVELY on POLITICAL and CONTROVERSIAL topics that spark intense debate. These should be topics where people have strong opposing views. Prioritize:
+
+- Political conflicts, policy debates, government decisions that divide public opinion
+- Controversial social issues, protests, civil unrest, and demonstrations
+- International tensions, diplomatic disputes, trade wars, sanctions
+- Divisive policy changes, elections, political scandals, corruption
+- Social justice movements, civil rights issues, cultural conflicts, identity politics
+- Economic policies that divide opinion (taxes, regulations, welfare, austerity)
+- Immigration debates, border policies, refugee crises
+- Healthcare policy debates, education reform controversies
+- Climate policy disputes, energy transition conflicts
+- Free speech controversies, censorship debates, media bias disputes
+
+AVOID: Sports, entertainment, technology product launches, non-controversial business news, feel-good stories, charity events, or neutral scientific discoveries.
 
 Include events from smallest to biggest in terms of global impact. For each event, provide:
-- title: A concise, engaging headline that highlights the controversial or political nature (max 80 characters)
-- description: A brief description that emphasizes why this is debated or controversial (max 150 characters)
-- category: One of: politics, world, business (prefer politics and world for controversial topics)
-- searchQuery: A search query (2-5 keywords) that can be used to find this news on Google News (e.g., "political protest policy debate 2024")
+- title: A concise, engaging headline that highlights the controversial or political nature and why it's debated (max 80 characters)
+- description: A brief description that emphasizes the controversy, opposing viewpoints, or why this sparks debate (max 150 characters)
+- category: Must be "politics" or "world" (use "politics" for domestic political issues, "world" for international controversies)
+- searchQuery: A search query (2-5 keywords) that can be used to find this news on Google News (e.g., "immigration policy debate protest 2024")
 
 Return ONLY valid JSON array, no markdown, no code blocks, no explanations. Format:
 [
