@@ -451,7 +451,7 @@ async function createRoomCard(room) {
             .from('room_participants')
             .select('user_id, username')
             .eq('room_id', room.id)
-            .limit(5); // Only fetch first 5 for display
+            .limit(12); // Fetch up to 12 for display (will stack in rows)
         
         if (!participantsError && participantsData) {
             // Get user IDs that are not anonymous
@@ -485,19 +485,24 @@ async function createRoomCard(room) {
         console.error('Error fetching participants:', error);
     }
     
-    // Create participant profile pictures HTML (max 5) - separate divs
+    // Get total participant count
+    const participantCount = room.active_participants || participants.length || 0;
+    
+    // Create participant profile pictures HTML - stack in rows above category
     let pfpsHTML = '';
     if (participants.length > 0) {
         pfpsHTML = '<div class="room-participants-pfps">';
-        const displayCount = Math.min(participants.length, 5);
         
-        for (let i = 0; i < displayCount; i++) {
+        // Calculate how many to show (stack in rows, leave space for category at bottom)
+        // Show as many as fit in rows above the category badge
+        const maxToShow = Math.min(participants.length, 12); // Show up to 12 PFPs
+        
+        for (let i = 0; i < maxToShow; i++) {
             const participant = participants[i];
             const initial = participant.username.charAt(0).toUpperCase();
             
             const safeUsername = escapeHtml(participant.username);
             if (participant.profile_picture_url) {
-                // Show profile picture with fallback to initial
                 const safeUrl = escapeHtml(participant.profile_picture_url);
                 pfpsHTML += `
                     <div class="participant-pfp" title="${safeUsername}">
@@ -506,7 +511,6 @@ async function createRoomCard(room) {
                     </div>
                 `;
             } else {
-                // Show initial
                 pfpsHTML += `
                     <div class="participant-pfp" title="${safeUsername}">
                         ${initial}
@@ -515,30 +519,34 @@ async function createRoomCard(room) {
             }
         }
         
-        // Show "+X" if there are more than 5 participants
-        if (room.active_participants > 5) {
-            const remaining = room.active_participants - 5;
-            pfpsHTML += `<div class="participant-pfp more">+${remaining}</div>`;
+        // Show "+X" if there are more participants
+        if (participantCount > maxToShow) {
+            pfpsHTML += `<div class="participant-pfp more" title="+${participantCount - maxToShow} more">+${participantCount - maxToShow}</div>`;
         }
         
         pfpsHTML += '</div>';
     }
     
-    // Handle category display - badge at bottom right
+    // Build the card HTML with new layout
     const categoryBadge = room.category 
         ? `<div class="room-card-category"><span class="category-badge category-${room.category}">${capitalizeFirst(room.category)}</span></div>`
         : '';
     
     roomCard.innerHTML = `
         <div class="room-card-inner">
-            ${categoryBadge}
-            <div class="room-card-content">
-                <h3 class="room-card-title">${escapeHtml(room.title)}</h3>
-                <div class="room-card-participants">
-                    ${pfpsHTML || '<span class="no-participants">No participants yet</span>'}
-                </div>
+            <!-- Participant count top left -->
+            <div class="room-card-participant-count">${participantCount}</div>
+            
+            <!-- PFPs stacked in rows above category -->
+            <div class="room-card-pfps-container">
+                ${pfpsHTML || '<span class="no-participants">No participants yet</span>'}
             </div>
+            
+            <!-- Category badge bottom right -->
+            ${categoryBadge}
         </div>
+        <!-- Room title below the square -->
+        <h3 class="room-card-title-below">${escapeHtml(room.title)}</h3>
     `;
     
     // Add click event to the room card
