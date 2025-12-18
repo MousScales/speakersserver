@@ -221,6 +221,204 @@
         .back-link:hover {
             text-decoration: underline;
         }
+
+        /* Notes Section Styles */
+        .notes-action-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .notes-action-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .notes-item {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: var(--bg-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .notes-item:hover {
+            background: var(--card-bg);
+            transform: translateX(4px);
+        }
+
+        .notes-item.folder {
+            font-weight: 500;
+        }
+
+        .notes-item.selected {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .notes-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            padding: 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .notes-breadcrumb-item {
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .notes-breadcrumb-item:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .notes-breadcrumb-separator {
+            color: var(--text-secondary);
+        }
+
+        .notes-editor-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .notes-editor-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .notes-editor-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .notes-editor-btn.delete {
+            background: #dc2626;
+            color: white;
+        }
+
+        .notes-editor-btn.delete:hover {
+            background: #b91c1c;
+        }
+
+        /* Note Editor Modal */
+        .note-editor-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .note-editor-modal.show {
+            display: flex;
+        }
+
+        .note-editor-modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .note-editor-modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .note-editor-modal-name-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .note-editor-modal-name-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .note-editor-modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .note-editor-modal-textarea {
+            flex: 1;
+            width: 100%;
+            min-height: 400px;
+            padding: 1.5rem;
+            border: none;
+            font-size: 1rem;
+            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+            overflow-y: auto;
+        }
+
+        .note-editor-modal-textarea:focus {
+            outline: none;
+        }
+
+        .note-editor-modal-textarea::placeholder {
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
