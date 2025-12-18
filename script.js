@@ -515,7 +515,8 @@ async function fetchNews() {
             newsItems = data.map(item => ({
                 title: item.title,
                 description: item.description,
-                category: item.category || 'general'
+                category: item.category || 'general',
+                sourceUrl: item.source_url || null
             }));
         } else {
             // Fallback to placeholder if no news available
@@ -566,6 +567,7 @@ async function initNewsSlideshow() {
             <div class="news-slide-content">
                 <h3 class="news-slide-title">${escapeHtml(news.title)}</h3>
                 <p class="news-slide-description">${escapeHtml(news.description)}</p>
+                ${news.sourceUrl ? `<a href="${news.sourceUrl}" target="_blank" rel="noopener noreferrer" class="news-slide-link">Read more →</a>` : ''}
             </div>
         `;
         slidesContainer.appendChild(slide);

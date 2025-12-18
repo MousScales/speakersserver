@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS news_items (
   description TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT 'general',
   date DATE NOT NULL DEFAULT CURRENT_DATE,
+  source_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

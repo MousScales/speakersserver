@@ -35,13 +35,15 @@ module.exports = async function handler(req, res) {
 - title: A concise, engaging headline (max 80 characters)
 - description: A brief description of the event (max 150 characters)
 - category: One of: politics, technology, sports, entertainment, science, business, world
+- searchQuery: A search query (2-5 keywords) that can be used to find this news on Google News (e.g., "climate summit agreement 2024")
 
 Return ONLY valid JSON array, no markdown, no code blocks, no explanations. Format:
 [
   {
     "title": "Event title",
     "description": "Event description",
-    "category": "category_name"
+    "category": "category_name",
+    "searchQuery": "search keywords for google news"
   }
 ]`;
 
@@ -101,16 +103,23 @@ Return ONLY valid JSON array, no markdown, no code blocks, no explanations. Form
             .delete()
             .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
-        // Insert new news items
+        // Insert new news items with Google News search URLs
         const { data: insertedNews, error: insertError } = await supabase
             .from('news_items')
             .insert(
-                newsItems.map(item => ({
-                    title: item.title,
-                    description: item.description,
-                    category: item.category || 'general',
-                    date: today
-                }))
+                newsItems.map(item => {
+                    // Generate Google News search URL
+                    const searchQuery = encodeURIComponent(item.searchQuery || item.title);
+                    const sourceUrl = `https://news.google.com/search?q=${searchQuery}&hl=en-US&gl=US&ceid=US:en`;
+                    
+                    return {
+                        title: item.title,
+                        description: item.description,
+                        category: item.category || 'general',
+                        date: today,
+                        source_url: sourceUrl
+                    };
+                })
             )
             .select();
 
