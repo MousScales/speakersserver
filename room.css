@@ -700,6 +700,22 @@
     color: var(--text-secondary);
 }
 
+.chat-login-prompt {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.chat-login-prompt a {
+    color: var(--primary-color);
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.chat-login-prompt a:hover {
+    text-decoration: none;
+}
+
 .send-btn {
     padding: 0.625rem 1.25rem;
     background: var(--accent-green);

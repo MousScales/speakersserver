@@ -100,7 +100,7 @@
             <div class="chat-messages" id="chatMessages">
                 <!-- Chat messages will appear here -->
             </div>
-            <div class="chat-input-container">
+            <div class="chat-input-container" id="chatInputContainer">
                 <input 
                     type="text" 
                     id="chatInput" 
@@ -108,6 +108,11 @@
                     autocomplete="off"
                 >
                 <button id="sendBtn" class="send-btn">Send</button>
+            </div>
+            <div class="chat-login-prompt" id="chatLoginPrompt" style="display: none;">
+                <p style="text-align: center; padding: 1rem; color: var(--text-secondary);">
+                    <a href="auth.html" style="color: var(--primary-color); text-decoration: underline;">Login</a> to join the chat
+                </p>
             </div>
         </aside>
     </div>

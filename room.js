@@ -343,18 +343,24 @@ async function loadRoom() {
 async function updateUIForRole() {
     roomRole.textContent = capitalizeFirst(currentRole);
     
-    // Disable chat for anonymous users
+    // Hide chat input for anonymous users, show login prompt
+    const chatInputContainer = document.getElementById('chatInputContainer');
+    const chatLoginPrompt = document.getElementById('chatLoginPrompt');
+    
     if (!isAuthenticated) {
-        if (chatInput) {
-            chatInput.disabled = true;
-            chatInput.placeholder = 'Please log in to chat';
+        if (chatInputContainer) {
+            chatInputContainer.style.display = 'none';
         }
-        if (sendBtn) {
-            sendBtn.disabled = true;
-            sendBtn.style.opacity = '0.5';
-            sendBtn.style.cursor = 'not-allowed';
+        if (chatLoginPrompt) {
+            chatLoginPrompt.style.display = 'block';
         }
     } else {
+        if (chatInputContainer) {
+            chatInputContainer.style.display = 'flex';
+        }
+        if (chatLoginPrompt) {
+            chatLoginPrompt.style.display = 'none';
+        }
         if (chatInput) {
             chatInput.disabled = false;
             chatInput.placeholder = 'Type a message...';
@@ -521,9 +527,9 @@ function updateParticipantsPanel() {
             actions = '';
         }
         
-        // Make item clickable if hand is raised and user is host/moderator (only for logged-in users)
+        // Make item clickable if hand is raised and user is host/moderator (including anonymous users)
         let clickable = false;
-        if (participant.hand_raised && !participant.is_speaking && canModerate && !isTargetHost && !participant.user_id.startsWith('anonymous_')) {
+        if (participant.hand_raised && !participant.is_speaking && canModerate && !isTargetHost) {
             clickable = true;
             item.style.cursor = 'pointer';
             item.style.backgroundColor = '#fef3c7';
@@ -740,8 +746,8 @@ function showParticipantMenu(participant) {
         }
     });
     
-    // Host/Mod actions (only for logged-in users)
-    if (canModerate && !isTargetHost && !participant.user_id.startsWith('anonymous_')) {
+    // Host/Mod actions (including anonymous users)
+    if (canModerate && !isTargetHost) {
         if (participant.hand_raised && !participant.is_speaking) {
             options.push({ 
                 label: '✅ Invite to Speak',
@@ -895,11 +901,7 @@ async function toggleHandRaise() {
 // Invite to speak (host only, only if hand is raised)
 window.inviteToSpeak = async function(userId) {
     try {
-        // Prevent inviting anonymous users
-        if (userId.startsWith('anonymous_')) {
-            showNotification('Cannot invite anonymous users to speak', 'error');
-            return;
-        }
+        // Allow anonymous users to be invited to speak
         
         // Check if participant has raised their hand
         const { data: participant } = await supabase
@@ -1404,6 +1406,24 @@ async function transferHost() {
         
         if (loggedInParticipants.length === 0) {
             console.log('⚠️ No logged-in users available for host transfer');
+            // Show message to all anonymous users that host ended the meeting
+            const { error: messageError } = await supabase
+                .from('chat_messages')
+                .insert([{
+                    room_id: roomId,
+                    user_id: 'system',
+                    username: 'System',
+                    message: '⚠️ The host has ended the meeting. Please leave the room.',
+                    created_at: new Date().toISOString()
+                }]);
+            
+            // Show notification to current user if they're anonymous
+            if (currentUserId.startsWith('anonymous_')) {
+                showNotification('The host has ended the meeting. You will be redirected...', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 3000);
+            }
             return;
         }
         
