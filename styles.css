@@ -66,9 +66,6 @@ header .container {
     position: relative;
 }
 
-.header-container {
-    padding: 0 20px;
-}
 
 .logo {
     flex-shrink: 0;
