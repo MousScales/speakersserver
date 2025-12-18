@@ -257,6 +257,13 @@ header .container {
     margin-bottom: 2rem;
 }
 
+.section-header-top {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
 .section-header h2 {
     font-size: 1.75rem;
     font-weight: 600;

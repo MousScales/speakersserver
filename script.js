@@ -68,11 +68,6 @@ async function displayRoomsByCategory() {
             const header = document.createElement('div');
             header.className = 'category-section-header';
             
-            // Add "Start a conversation" button inline with "Currently Live" header
-            const startBtnHtml = cat.key === 'currently-live' 
-                ? `<button class="start-conversation-btn" id="startDiscussionBtn">Start a conversation</button>`
-                : '';
-            
             // Only show "View all" if there are rooms
             const viewAllBtn = categoryRooms.length > 0 
                 ? `<button class="view-all-btn" data-category="${cat.key}">View all</button>`
@@ -80,36 +75,8 @@ async function displayRoomsByCategory() {
             
             header.innerHTML = `
                 <h3 class="category-section-title">${cat.name}</h3>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    ${startBtnHtml}
-                    ${viewAllBtn}
-                </div>
+                ${viewAllBtn}
             `;
-            
-            // Setup event listener for start button if it was added
-            if (cat.key === 'currently-live') {
-                setTimeout(() => {
-                    const btn = document.getElementById('startDiscussionBtn');
-                    if (btn) {
-                        btn.addEventListener('click', async () => {
-                            // Check if user is authenticated
-                            if (typeof supabase !== 'undefined' && supabase) {
-                                const { data: { session } } = await supabase.auth.getSession();
-                                if (!session) {
-                                    showNotification('Please log in to create a room', 'error');
-                                    window.location.href = 'auth.html';
-                                    return;
-                                }
-                            }
-                            
-                            if (modal) {
-                                initModal();
-                                modal.style.display = 'flex';
-                            }
-                        });
-                    }
-                }, 0);
-            }
             
             const grid = document.createElement('div');
             grid.className = 'rooms-grid';
