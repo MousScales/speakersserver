@@ -2195,26 +2195,35 @@ function updateSpeakingStatus(identity, isSpeaking) {
         return;
     }
     
-    // Find speaker tile
+    // Find speaker tile - try multiple methods
     let tile = document.querySelector(`[data-participant-id="${participant.user_id}"]`);
+    
+    // Also try by identity directly (in case it matches)
+    if (!tile) {
+        tile = document.querySelector(`[data-participant-id="${identity}"]`);
+    }
     
     // If not found in speakers, check audience tiles
     if (!tile) {
         const audienceTiles = document.querySelectorAll('.audience-member');
         audienceTiles.forEach(audienceTile => {
+            const tileId = audienceTile.getAttribute('data-participant-id');
             const nameElement = audienceTile.querySelector('.audience-member-name');
-            if (nameElement && nameElement.textContent === participant.username) {
+            if ((tileId === participant.user_id || tileId === identity) || 
+                (nameElement && nameElement.textContent === participant.username)) {
                 tile = audienceTile;
             }
         });
     }
     
-    // Also check speaker tiles by name
+    // Also check speaker tiles by name and ID
     if (!tile) {
         const speakerTiles = document.querySelectorAll('.speaker-tile');
         speakerTiles.forEach(speakerTile => {
+            const tileId = speakerTile.getAttribute('data-participant-id');
             const nameElement = speakerTile.querySelector('.speaker-name');
-            if (nameElement && nameElement.textContent === participant.username) {
+            if ((tileId === participant.user_id || tileId === identity) ||
+                (nameElement && nameElement.textContent === participant.username)) {
                 tile = speakerTile;
             }
         });
@@ -2223,13 +2232,17 @@ function updateSpeakingStatus(identity, isSpeaking) {
     if (tile) {
         if (isSpeaking) {
             tile.classList.add('speaking');
-            console.log('✅ Speaking indicator added for', participant.username, 'tile:', tile.className);
+            console.log('✅ Speaking indicator added for', participant.username, 'identity:', identity, 'tile:', tile.className);
         } else {
             tile.classList.remove('speaking');
             console.log('🔇 Speaking indicator removed for', participant.username);
         }
     } else {
         console.warn('⚠️ Tile not found for participant:', participant.username, 'identity:', identity, 'user_id:', participant.user_id);
+        // Retry after a short delay in case tile is being created
+        setTimeout(() => {
+            updateSpeakingStatus(identity, isSpeaking);
+        }, 500);
     }
 }
 
