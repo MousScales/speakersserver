@@ -657,17 +657,9 @@ header .container {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.room-card:hover {
-    transform: translateY(-4px);
-}
-
 .room-card:hover .room-card-inner {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-color: var(--primary-color);
-}
-
-.room-card:active {
-    transform: translateY(-2px);
 }
 
 .room-card.hidden {
