@@ -225,7 +225,6 @@ if (goHomeBtn) {
 if (endMeetingBtn) {
     endMeetingBtn.addEventListener('click', endMeeting);
 }
-    }
 })();
 
 // Username form removed - no longer needed since we handle auth/anonymous automatically
