@@ -695,6 +695,23 @@ header .container {
     background: #4b5563;
 }
 
+.start-conversation-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+    text-decoration: none;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.start-conversation-btn:hover {
+    text-decoration: underline;
+}
+
 .btn-secondary {
     background: transparent;
     color: var(--text-color);
