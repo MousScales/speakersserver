@@ -42,7 +42,8 @@ body {
 }
 
 header .container {
-    padding: 0 20px;
+    padding: 0;
+    max-width: 100%;
 }
 
 /* Header */
@@ -63,6 +64,10 @@ header .container {
     align-items: center;
     gap: 1rem;
     position: relative;
+}
+
+.header-container {
+    padding: 0 20px;
 }
 
 .logo {
