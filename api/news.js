@@ -31,11 +31,19 @@ module.exports = async function handler(req, res) {
 
         // Call OpenAI to get today's news
         const today = new Date().toISOString().split('T')[0];
-        const prompt = `Generate a JSON array of 5-7 recent news events from around the world that happened today (${today}). Include events from smallest to biggest in terms of global impact. For each event, provide:
-- title: A concise, engaging headline (max 80 characters)
-- description: A brief description of the event (max 150 characters)
-- category: One of: politics, technology, sports, entertainment, science, business, world
-- searchQuery: A search query (2-5 keywords) that can be used to find this news on Google News (e.g., "climate summit agreement 2024")
+        const prompt = `Generate a JSON array of 5-7 recent news events from around the world that happened today (${today}). Focus on POLITICAL and CONTROVERSIAL topics that spark debate and discussion. Prioritize:
+- Political conflicts, policy debates, and government decisions
+- Controversial social issues, protests, and civil unrest
+- International tensions, diplomatic disputes, and trade wars
+- Divisive policy changes, elections, and political scandals
+- Social justice movements, civil rights issues, and cultural conflicts
+- Economic policies that divide opinion (taxes, regulations, etc.)
+
+Include events from smallest to biggest in terms of global impact. For each event, provide:
+- title: A concise, engaging headline that highlights the controversial or political nature (max 80 characters)
+- description: A brief description that emphasizes why this is debated or controversial (max 150 characters)
+- category: One of: politics, world, business (prefer politics and world for controversial topics)
+- searchQuery: A search query (2-5 keywords) that can be used to find this news on Google News (e.g., "political protest policy debate 2024")
 
 Return ONLY valid JSON array, no markdown, no code blocks, no explanations. Format:
 [
