@@ -293,6 +293,20 @@ if (prevBtn) {
 discussionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    // Check if user is authenticated
+    if (typeof supabase === 'undefined' || !supabase) {
+        showNotification('Please log in to create a room', 'error');
+        window.location.href = 'auth.html';
+        return;
+    }
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        showNotification('Please log in to create a room', 'error');
+        window.location.href = 'auth.html';
+        return;
+    }
+    
     if (!validateStep(1)) {
         showNotification('Please fill in all required fields', 'error');
         currentStep = 1;
