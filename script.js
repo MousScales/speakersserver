@@ -811,6 +811,7 @@ async function updateLoginButton() {
 
 // Initialize the app
 async function init() {
+    setupStartButton(); // Setup the start conversation button
     await updateLoginButton();
     initNewsSlideshow();
     await loadRooms();
