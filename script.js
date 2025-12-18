@@ -3,113 +3,116 @@ const modal = document.getElementById('createDiscussionModal');
 const startBtn = document.getElementById('startDiscussionBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const discussionForm = document.getElementById('discussionForm');
-const roomsGrid = document.getElementById('roomsGrid');
-const tabs = document.querySelectorAll('.tab');
 const loginBtn = document.getElementById('loginBtn');
 
 
-// Tab filtering functionality
-let currentCategory = 'all';
+// Room organization by category
 let allRooms = []; // Store all rooms from database
 
-tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        // Update active tab
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+// Group rooms by category and display in sections
+async function displayRoomsByCategory() {
+    const categorySections = document.getElementById('categorySections');
+    if (!categorySections) return;
+    
+    categorySections.innerHTML = '';
+    
+    // Define category order and display names
+    const categoryOrder = [
+        { key: 'popular', name: 'Popular', sort: (a, b) => (b.active_participants || 0) - (a.active_participants || 0) },
+        { key: 'new', name: 'New', filter: (room) => {
+            const oneDayAgo = new Date();
+            oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+            return new Date(room.created_at) >= oneDayAgo;
+        }, sort: (a, b) => new Date(b.created_at) - new Date(a.created_at) },
+        { key: 'debate', name: 'Debate' },
+        { key: 'hot-takes', name: 'Hot Takes' },
+        { key: 'chilling', name: 'Chilling' },
+        { key: 'general', name: 'General' }
+    ];
+    
+    // Process each category
+    for (const cat of categoryOrder) {
+        let categoryRooms = [];
         
-        // Get selected category
-        currentCategory = tab.getAttribute('data-category');
-        
-        // Filter and display rooms
-        displayRooms(currentCategory);
-    });
-});
-
-async function displayRooms(category = 'all') {
-    // Clear grid
-    roomsGrid.innerHTML = '';
-    
-    let filteredRooms = [...allRooms]; // Start with all rooms
-    
-    // Apply category-specific filtering and sorting
-    switch(category) {
-        case 'all':
-            // Show all rooms, sorted by newest first
-            filteredRooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-            
-        case 'debate':
-            // Show only debate category rooms
-            filteredRooms = allRooms.filter(room => room.category === 'debate');
-            filteredRooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-            
-        case 'popular':
-            // Show rooms sorted by most participants (descending)
-            filteredRooms.sort((a, b) => {
-                // First sort by participant count
-                if (b.active_participants !== a.active_participants) {
-                    return b.active_participants - a.active_participants;
-                }
-                // If same participant count, sort by newest
-                return new Date(b.created_at) - new Date(a.created_at);
-            });
-            break;
-            
-        case 'new':
-            // Show newest rooms, but filter out old ones (older than 24 hours)
-            const now = new Date();
-            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            
-            filteredRooms = allRooms.filter(room => {
-                const roomDate = new Date(room.created_at);
-                return roomDate >= oneDayAgo; // Only show rooms created in last 24 hours
-            });
-            
-            // Sort by newest first
-            filteredRooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-            
-        case 'hot-takes':
-            // Show only hot-takes category rooms
-            filteredRooms = allRooms.filter(room => room.category === 'hot-takes');
-            filteredRooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-            
-        case 'chilling':
-            // Show only chilling category rooms
-            filteredRooms = allRooms.filter(room => room.category === 'chilling');
-            filteredRooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            break;
-            
-        default:
-            // Default: show all, sorted by newest
-            filteredRooms.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    }
-    
-    // Display rooms
-    if (filteredRooms.length === 0) {
-        let message = 'No rooms found.';
-        if (category === 'new') {
-            message = 'No new rooms in the last 24 hours. Be the first to create one!';
-        } else if (category === 'debate') {
-            message = 'No debate rooms yet. Be the first to create one!';
-        } else if (category === 'hot-takes') {
-            message = 'No hot take rooms yet. Be the first to create one!';
-        } else if (category === 'chilling') {
-            message = 'No chilling rooms yet. Be the first to create one!';
+        if (cat.key === 'popular') {
+            categoryRooms = [...allRooms].sort(cat.sort).slice(0, 10); // Top 10 popular
+        } else if (cat.key === 'new') {
+            categoryRooms = allRooms.filter(cat.filter).sort(cat.sort).slice(0, 10); // Top 10 new
         } else {
-            message = 'No rooms in this category yet. Be the first to create one!';
+            categoryRooms = allRooms.filter(room => room.category === cat.key).slice(0, 10); // First 10 in category
         }
-        roomsGrid.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 3rem; width: 100%; grid-column: 1 / -1;">${message}</p>`;
-        return;
+        
+        if (categoryRooms.length > 0) {
+            const section = document.createElement('div');
+            section.className = 'category-section';
+            section.setAttribute('data-category', cat.key);
+            
+            const header = document.createElement('div');
+            header.className = 'category-section-header';
+            header.innerHTML = `
+                <h3 class="category-section-title">${cat.name}</h3>
+                <button class="view-all-btn" data-category="${cat.key}">View all</button>
+            `;
+            
+            const grid = document.createElement('div');
+            grid.className = 'rooms-grid';
+            
+            // Create room cards for this category
+            for (const room of categoryRooms) {
+                const card = await createRoomCard(room);
+                grid.appendChild(card);
+            }
+            
+            section.appendChild(header);
+            section.appendChild(grid);
+            categorySections.appendChild(section);
+            
+            // Add click handler for "View all" button
+            const viewAllBtn = header.querySelector('.view-all-btn');
+            viewAllBtn.addEventListener('click', () => {
+                showCategoryView(cat.key, cat.name);
+            });
+        }
+    }
+}
+
+// Show all rooms in a category
+function showCategoryView(categoryKey, categoryName) {
+    const categorySections = document.getElementById('categorySections');
+    if (!categorySections) return;
+    
+    categorySections.innerHTML = `
+        <div style="margin-bottom: 2rem;">
+            <button class="btn-secondary" id="backBtn" style="margin-bottom: 1rem;">← Back</button>
+            <h2 style="font-size: 2rem; font-weight: 700; color: var(--text-color); font-family: 'Poppins', sans-serif; margin-bottom: 2rem;">${categoryName}</h2>
+        </div>
+        <div class="rooms-grid" id="categoryRoomsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; overflow-x: visible;"></div>
+    `;
+    
+    let filteredRooms = [];
+    
+    if (categoryKey === 'popular') {
+        filteredRooms = [...allRooms].sort((a, b) => (b.active_participants || 0) - (a.active_participants || 0));
+    } else if (categoryKey === 'new') {
+        const oneDayAgo = new Date();
+        oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+        filteredRooms = allRooms.filter(room => {
+            return new Date(room.created_at) >= oneDayAgo;
+        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } else {
+        filteredRooms = allRooms.filter(room => room.category === categoryKey);
     }
     
-    // Create cards with async participant loading
-    for (const room of filteredRooms) {
-        await createRoomCard(room);
-    }
+    const grid = document.getElementById('categoryRoomsGrid');
+    filteredRooms.forEach(async (room) => {
+        const card = await createRoomCard(room);
+        grid.appendChild(card);
+    });
+    
+    // Back button handler
+    document.getElementById('backBtn').addEventListener('click', () => {
+        displayRoomsByCategory();
+    });
 }
 
 // Open modal
@@ -406,7 +409,7 @@ async function createRoomCard(room) {
         console.error('Error fetching participants:', error);
     }
     
-    // Create participant profile pictures HTML (max 5)
+    // Create participant profile pictures HTML (max 5) - separate divs
     let pfpsHTML = '';
     if (participants.length > 0) {
         pfpsHTML = '<div class="room-participants-pfps">';
@@ -415,14 +418,13 @@ async function createRoomCard(room) {
         for (let i = 0; i < displayCount; i++) {
             const participant = participants[i];
             const initial = participant.username.charAt(0).toUpperCase();
-            const offset = i * -8; // Overlap profile pictures
             
             const safeUsername = escapeHtml(participant.username);
             if (participant.profile_picture_url) {
                 // Show profile picture with fallback to initial
                 const safeUrl = escapeHtml(participant.profile_picture_url);
                 pfpsHTML += `
-                    <div class="participant-pfp" style="z-index: ${10 - i}; transform: translateX(${offset}px);" title="${safeUsername}">
+                    <div class="participant-pfp" title="${safeUsername}">
                         <img src="${safeUrl}" alt="${safeUsername}" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${initial}';">
                         <span style="display: none;">${initial}</span>
                     </div>
@@ -430,7 +432,7 @@ async function createRoomCard(room) {
             } else {
                 // Show initial
                 pfpsHTML += `
-                    <div class="participant-pfp" style="z-index: ${10 - i}; transform: translateX(${offset}px);" title="${safeUsername}">
+                    <div class="participant-pfp" title="${safeUsername}">
                         ${initial}
                     </div>
                 `;
@@ -440,28 +442,25 @@ async function createRoomCard(room) {
         // Show "+X" if there are more than 5 participants
         if (room.active_participants > 5) {
             const remaining = room.active_participants - 5;
-            pfpsHTML += `<div class="participant-pfp more" style="z-index: 1; transform: translateX(${displayCount * -8}px);">+${remaining}</div>`;
+            pfpsHTML += `<div class="participant-pfp more">+${remaining}</div>`;
         }
         
         pfpsHTML += '</div>';
     }
     
-    // Handle category display - show badge only if category exists
+    // Handle category display - badge at bottom right
     const categoryBadge = room.category 
-        ? `<span class="category-badge category-${room.category}">${capitalizeFirst(room.category)}</span>`
+        ? `<div class="room-card-category"><span class="category-badge category-${room.category}">${capitalizeFirst(room.category)}</span></div>`
         : '';
     
     roomCard.innerHTML = `
         <div class="room-card-inner">
-            <div class="room-card-header">
-                ${categoryBadge}
-            </div>
+            ${categoryBadge}
             <div class="room-card-content">
                 <h3 class="room-card-title">${escapeHtml(room.title)}</h3>
-                <p class="room-card-description">${escapeHtml(room.description)}</p>
-            </div>
-            <div class="room-card-footer">
-                ${pfpsHTML || '<span class="no-participants">No participants yet</span>'}
+                <div class="room-card-participants">
+                    ${pfpsHTML || '<span class="no-participants">No participants yet</span>'}
+                </div>
             </div>
         </div>
     `;
@@ -472,7 +471,7 @@ async function createRoomCard(room) {
         window.location.href = `room.html?id=${room.id}`;
     });
     
-    roomsGrid.appendChild(roomCard);
+    return roomCard;
 }
 
 // Load rooms from Supabase
@@ -486,7 +485,7 @@ async function loadRooms() {
         if (error) throw error;
         
         allRooms = data;
-        displayRooms(currentCategory);
+        displayRoomsByCategory();
         
     } catch (error) {
         console.error('Error loading rooms:', error);
@@ -505,7 +504,7 @@ function subscribeToRooms() {
         }, (payload) => {
             console.log('✅ New room added:', payload.new);
             allRooms.unshift(payload.new);
-            displayRooms(currentCategory);
+            displayRoomsByCategory();
         })
         .on('postgres_changes', {
             event: 'UPDATE',
@@ -516,11 +515,11 @@ function subscribeToRooms() {
             const index = allRooms.findIndex(room => room.id === payload.new.id);
             if (index !== -1) {
                 allRooms[index] = payload.new;
-                displayRooms(currentCategory);
+                displayRoomsByCategory();
             } else {
                 // Room might be new, add it
                 allRooms.unshift(payload.new);
-                displayRooms(currentCategory);
+                displayRoomsByCategory();
             }
         })
         .on('postgres_changes', {
@@ -530,7 +529,7 @@ function subscribeToRooms() {
         }, (payload) => {
             console.log('✅ Room deleted:', payload.old);
             allRooms = allRooms.filter(room => room.id !== payload.old.id);
-            displayRooms(currentCategory);
+            displayRoomsByCategory();
         })
         .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {

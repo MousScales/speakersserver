@@ -460,18 +460,80 @@ header .container {
     }
 }
 
-/* Rooms Grid */
+/* Category Section */
+.category-section {
+    margin-bottom: 3rem;
+}
+
+.category-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 0 4px;
+}
+
+.category-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.view-all-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.view-all-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Rooms Grid - Horizontal Scroll */
 .rooms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+.rooms-grid::-webkit-scrollbar {
+    height: 6px;
+}
+
+.rooms-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rooms-grid::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.rooms-grid::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }
 
 .room-card {
     position: relative;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 100%;
+    flex-shrink: 0;
+    width: 200px;
+    height: 200px;
 }
 
 .room-card-inner {
@@ -482,6 +544,7 @@ header .container {
     position: relative;
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -510,17 +573,18 @@ header .container {
     display: none;
 }
 
-/* Room Card Header */
-.room-card-header {
-    padding: 1.25rem 1.25rem 1rem;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    min-height: 2.5rem; /* Ensure consistent height even without category */
+/* Room Card - Square Layout */
+.room-card-inner {
+    position: relative;
+    padding: 1rem;
 }
 
-.room-card-header:empty {
-    padding: 1.25rem 1.25rem 0.5rem;
+/* Category Badge - Bottom Right */
+.room-card-category {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 2;
 }
 
 .category-badge {
@@ -533,16 +597,16 @@ header .container {
     display: inline-block;
 }
 
-/* Room Participants Profile Pictures */
+/* Room Participants Profile Pictures - Separate Divs */
 .room-participants-pfps {
     display: flex;
-    align-items: center;
-    gap: 0;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .participant-pfp {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: linear-gradient(135deg, #9ca3af, #6b7280);
     color: white;
@@ -550,7 +614,7 @@ header .container {
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     border: 2px solid var(--card-bg);
     transition: transform 0.2s;
     position: relative;
@@ -581,47 +645,33 @@ header .container {
     opacity: 0.6;
 }
 
-/* Room Card Content */
+/* Room Card Content - Below Category */
 .room-card-content {
-    padding: 0 1.25rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    position: absolute;
+    bottom: 3.5rem;
+    left: 1rem;
+    right: 1rem;
+    z-index: 1;
 }
 
 .room-card-title {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-color);
-    line-height: 1.4;
-    margin: 0;
+    line-height: 1.3;
+    margin: 0 0 0.75rem 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-.room-card-description {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-}
-
-/* Room Card Footer */
-.room-card-footer {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--border-color);
-    margin-top: auto;
+/* Room Card Participants - Below Title */
+.room-card-participants {
     display: flex;
-    align-items: center;
-    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 
