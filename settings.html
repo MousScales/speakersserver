@@ -275,10 +275,10 @@
             </div>
             
             <!-- Note Editor Modal -->
-            <div id="noteEditorModal" class="note-editor-modal" style="display: none;">
+            <div id="noteEditorModal" class="note-editor-modal">
                 <div class="note-editor-modal-content">
                     <div class="note-editor-modal-header">
-                        <input type="text" id="noteNameInputModal" placeholder="Note name..." style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-color); font-size: 1.25rem; font-weight: 600; width: 100%; max-width: 500px; box-sizing: border-box;">
+                        <input type="text" id="noteNameInputModal" class="note-editor-modal-name-input" placeholder="Note name...">
                         <div class="note-editor-modal-actions">
                             <button class="notes-editor-btn" onclick="saveCurrentNote()">Save</button>
                             <button class="notes-editor-btn delete" onclick="deleteCurrentNote()">Delete</button>
