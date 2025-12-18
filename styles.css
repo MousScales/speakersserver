@@ -965,16 +965,20 @@ header .container {
 }
 
 .modal-content {
-    background: var(--card-bg);
+    background: var(--bg-color);
     margin: 5% auto;
-    padding: 2rem;
-    border-radius: 8px;
+    padding: 0;
+    border-radius: 20px;
     width: 90%;
-    max-width: 600px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    max-width: 700px;
+    max-height: 90vh;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
     animation: slideDown 0.3s ease;
     border: 1px solid var(--border-color);
     transition: background 0.3s, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 @keyframes slideDown {
@@ -1011,15 +1015,21 @@ header .container {
 /* Multi-step Modal */
 .multi-step-modal {
     max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: 90vh;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
+    padding: 2rem 2rem 1.5rem 2rem;
     border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border-radius: 20px 20px 0 0;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -1107,11 +1117,62 @@ header .container {
 /* Step Content */
 .step-content {
     display: none;
+    padding: 2rem;
     animation: fadeIn 0.3s ease;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .step-content.active {
     display: block;
+}
+
+/* Form Question/Answer Layout */
+.form-question-group {
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-question {
+    flex-shrink: 0;
+}
+
+.form-question label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    display: block;
+    margin-bottom: 0;
+}
+
+.form-answer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-answer input,
+.form-answer textarea,
+.form-answer select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 0.9375rem;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
+}
+
+.form-answer input:focus,
+.form-answer textarea:focus,
+.form-answer select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
 }
 
 @keyframes fadeIn {
@@ -1243,9 +1304,14 @@ header .container {
 
 .form-actions {
     display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding: 1.5rem 2rem 2rem 2rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border-radius: 0 0 20px 20px;
+    flex-shrink: 0;
 }
 
 /* Footer */
