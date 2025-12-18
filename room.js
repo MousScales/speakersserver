@@ -21,6 +21,12 @@ const meetingEndedModal = document.getElementById('meetingEndedModal');
 const goHomeBtn = document.getElementById('goHomeBtn');
 const micBtn = document.getElementById('micBtn');
 const screenShareBtn = document.getElementById('screenShareBtn');
+const notesBtn = document.getElementById('notesBtn');
+const notesPanel = document.getElementById('notesPanel');
+const closeNotesBtn = document.getElementById('closeNotesBtn');
+const notesCategory = document.getElementById('notesCategory');
+const notesTextarea = document.getElementById('notesTextarea');
+const saveNotesBtn = document.getElementById('saveNotesBtn');
 const participantsBtn = document.getElementById('participantsBtn');
 const participantCount = document.getElementById('participantCount');
 const participantsPanel = document.getElementById('participantsPanel');
@@ -370,6 +376,9 @@ async function loadRoom() {
         roomCategory.textContent = capitalizeFirst(data.category);
         roomCategory.className = `room-category category ${data.category}`;
         
+        // Set current room category for notes
+        currentRoomCategory = data.category || 'general';
+        
     } catch (error) {
         console.error('Error loading room:', error);
         alert('Failed to load room!');
@@ -418,6 +427,15 @@ async function updateUIForRole() {
             endMeetingBtn.style.display = 'inline-flex';
         } else {
             endMeetingBtn.style.display = 'none';
+        }
+    }
+    
+    // Show/hide Notes button for logged-in users only
+    if (notesBtn) {
+        if (isAuthenticated) {
+            notesBtn.style.display = 'inline-flex';
+        } else {
+            notesBtn.style.display = 'none';
         }
     }
     
