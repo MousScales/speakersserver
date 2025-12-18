@@ -496,6 +496,93 @@ async function createRoomCard(room) {
     return roomCard;
 }
 
+// News slideshow data
+const newsItems = [
+    {
+        title: "Breaking: Global Climate Summit Reaches Historic Agreement",
+        description: "World leaders unite on ambitious carbon reduction targets, marking a turning point in international climate policy.",
+        link: "#"
+    },
+    {
+        title: "Tech Innovation: AI Breakthrough in Medical Diagnosis",
+        description: "New AI system achieves 98% accuracy in early disease detection, revolutionizing healthcare diagnostics.",
+        link: "#"
+    },
+    {
+        title: "Sports: Championship Finals Set for This Weekend",
+        description: "Top teams prepare for the ultimate showdown after an intense season of competition.",
+        link: "#"
+    },
+    {
+        title: "Entertainment: Award-Winning Film Premieres Worldwide",
+        description: "Critically acclaimed movie opens in theaters, receiving standing ovations from audiences.",
+        link: "#"
+    }
+];
+
+let currentNewsSlide = 0;
+
+// Initialize news slideshow
+function initNewsSlideshow() {
+    const slideshow = document.getElementById('newsSlideshow');
+    if (!slideshow) return;
+    
+    // Create slides
+    const slidesContainer = document.createElement('div');
+    slidesContainer.style.position = 'relative';
+    slidesContainer.style.width = '100%';
+    slidesContainer.style.height = '100%';
+    
+    newsItems.forEach((news, index) => {
+        const slide = document.createElement('div');
+        slide.className = `news-slide ${index === 0 ? 'active' : ''}`;
+        slide.innerHTML = `
+            <div class="news-slide-content">
+                <h3 class="news-slide-title">${escapeHtml(news.title)}</h3>
+                <p class="news-slide-description">${escapeHtml(news.description)}</p>
+                <a href="${news.link}" class="news-slide-link">Read more →</a>
+            </div>
+        `;
+        slidesContainer.appendChild(slide);
+    });
+    
+    // Create indicators
+    const indicators = document.createElement('div');
+    indicators.className = 'news-slideshow-indicators';
+    newsItems.forEach((_, index) => {
+        const indicator = document.createElement('div');
+        indicator.className = `news-indicator ${index === 0 ? 'active' : ''}`;
+        indicator.addEventListener('click', () => {
+            goToNewsSlide(index);
+        });
+        indicators.appendChild(indicator);
+    });
+    
+    slideshow.appendChild(slidesContainer);
+    slideshow.appendChild(indicators);
+    
+    // Auto-advance slides
+    setInterval(() => {
+        currentNewsSlide = (currentNewsSlide + 1) % newsItems.length;
+        goToNewsSlide(currentNewsSlide);
+    }, 5000); // Change slide every 5 seconds
+}
+
+function goToNewsSlide(index) {
+    const slides = document.querySelectorAll('.news-slide');
+    const indicators = document.querySelectorAll('.news-indicator');
+    
+    slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+    });
+    
+    indicators.forEach((indicator, i) => {
+        indicator.classList.toggle('active', i === index);
+    });
+    
+    currentNewsSlide = index;
+}
+
 // Load rooms from Supabase
 async function loadRooms() {
     try {

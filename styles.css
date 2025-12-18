@@ -252,7 +252,7 @@ header .container {
 
 .section-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-bottom: 2rem;
 }
@@ -458,6 +458,101 @@ header .container {
     50% {
         box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4), 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
+}
+
+/* News Slideshow */
+.news-slideshow-section {
+    margin-bottom: 3rem;
+    padding: 2rem 0;
+}
+
+.news-slideshow {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+}
+
+.news-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+}
+
+.news-slide.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+.news-slide-content {
+    max-width: 800px;
+    text-align: center;
+}
+
+.news-slide-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.3;
+}
+
+.news-slide-description {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.news-slide-link {
+    display: inline-block;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.news-slide-link:hover {
+    text-decoration: underline;
+}
+
+.news-slideshow-indicators {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 2;
+}
+
+.news-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.news-indicator.active {
+    background: var(--primary-color);
+    width: 24px;
+    border-radius: 4px;
 }
 
 /* Category Section */
