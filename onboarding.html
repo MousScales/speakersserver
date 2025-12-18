@@ -326,25 +326,28 @@
                 // Upload profile picture if selected
                 if (selectedFile) {
                     const fileExt = selectedFile.name.split('.').pop();
-                    const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-                    const filePath = `profiles/${fileName}`;
+                    const fileName = `${Date.now()}.${fileExt}`;
+                    const filePath = `profiles/${session.user.id}/${fileName}`;
 
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('profile-pictures')
                         .upload(filePath, selectedFile, {
                             cacheControl: '3600',
-                            upsert: false
+                            upsert: true // Allow overwriting
                         });
 
                     if (uploadError) {
-                        // If bucket doesn't exist, create it or use a fallback
-                        console.warn('Upload error:', uploadError);
-                        // For now, we'll just skip the image upload
+                        console.error('Upload error:', uploadError);
+                        showError('Failed to upload profile picture: ' + uploadError.message);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Complete Setup';
+                        return;
                     } else {
                         const { data: { publicUrl } } = supabase.storage
                             .from('profile-pictures')
                             .getPublicUrl(filePath);
                         profilePictureUrl = publicUrl;
+                        console.log('✅ Profile picture uploaded:', profilePictureUrl);
                     }
                 } else if (imagePreviewUrl && imagePreviewUrl.startsWith('http')) {
                     // Keep existing URL

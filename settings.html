@@ -421,16 +421,27 @@
                 // Upload profile picture if a new one was selected
                 if (selectedFile) {
                     const fileExt = selectedFile.name.split('.').pop();
-                    const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-                    const filePath = `profiles/${fileName}`;
+                    const fileName = `${Date.now()}.${fileExt}`;
+                    const filePath = `profiles/${session.user.id}/${fileName}`;
 
                     // Delete old profile picture if it exists
                     if (currentProfilePictureUrl && currentProfilePictureUrl.includes('profile-pictures')) {
-                        const oldFilePath = currentProfilePictureUrl.split('profile-pictures/')[1]?.split('?')[0];
-                        if (oldFilePath) {
-                            await supabase.storage
-                                .from('profile-pictures')
-                                .remove([`profiles/${oldFilePath}`]);
+                        try {
+                            // Extract the path from the URL
+                            const urlParts = currentProfilePictureUrl.split('/profile-pictures/');
+                            if (urlParts.length > 1) {
+                                const oldFilePath = urlParts[1].split('?')[0];
+                                if (oldFilePath) {
+                                    const { error: deleteError } = await supabase.storage
+                                        .from('profile-pictures')
+                                        .remove([oldFilePath]);
+                                    if (deleteError) {
+                                        console.warn('Error deleting old picture:', deleteError);
+                                    }
+                                }
+                            }
+                        } catch (deleteErr) {
+                            console.warn('Error deleting old picture:', deleteErr);
                         }
                     }
 
@@ -438,17 +449,21 @@
                         .from('profile-pictures')
                         .upload(filePath, selectedFile, {
                             cacheControl: '3600',
-                            upsert: true
+                            upsert: true // Allow overwriting
                         });
 
                     if (uploadError) {
-                        console.warn('Upload error:', uploadError);
-                        // Continue without image if upload fails
+                        console.error('Upload error:', uploadError);
+                        showError('Failed to upload profile picture: ' + uploadError.message);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Save Changes';
+                        return;
                     } else {
                         const { data: { publicUrl } } = supabase.storage
                             .from('profile-pictures')
                             .getPublicUrl(filePath);
                         profilePictureUrl = publicUrl;
+                        console.log('✅ Profile picture uploaded:', profilePictureUrl);
                     }
                 }
 
