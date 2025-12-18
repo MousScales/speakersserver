@@ -2776,26 +2776,27 @@ function playNotificationSound() {
     }
 }
 
-// Notes panel functionality - Google Drive-like structure
-let currentRoomFolderId = null;
+// Simple Notes Popup Functionality
 let selectedRoomNoteId = null;
-let roomBreadcrumbPath = [];
+let editingNoteId = null;
 
-// Open notes modal
+// Open notes popup
 if (notesBtn) {
     notesBtn.addEventListener('click', () => {
         if (notesModal) {
-            notesModal.classList.add('show');
+            notesModal.style.display = 'flex';
             loadNotesForRoom();
         }
     });
 }
 
-// Close notes modal
+// Close notes popup
 function closeNotesModal() {
     if (notesModal) {
-        notesModal.classList.remove('show');
+        notesModal.style.display = 'none';
     }
+    editingNoteId = null;
+    selectedRoomNoteId = null;
 }
 
 if (closeNotesBtn) {
@@ -2811,8 +2812,8 @@ if (notesModal) {
     });
 }
 
-// Load notes for room
-async function loadNotesForRoom(folderId = null) {
+// Load notes for room (only notes, no folders)
+async function loadNotesForRoom() {
     if (!supabase || !supabase.auth) return;
     
     const { data: { session } } = await supabase.auth.getSession();
@@ -2823,184 +2824,92 @@ async function loadNotesForRoom(folderId = null) {
         return;
     }
     
-    // Load items in current folder
-    let query = supabase
+    // Load only notes (not folders)
+    const { data: items, error } = await supabase
         .from('user_notes')
         .select('*')
-        .eq('user_id', session.user.id);
-    
-    if (folderId) {
-        query = query.eq('parent_id', folderId);
-    } else {
-        query = query.is('parent_id', null);
-    }
-    
-    const { data: items, error } = await query
-        .order('type', { ascending: false }) // Folders first
-        .order('name', { ascending: true });
+        .eq('user_id', session.user.id)
+        .eq('type', 'note')
+        .is('parent_id', null)
+        .order('updated_at', { ascending: false });
     
     if (error) {
         console.error('Error loading notes:', error);
         return;
     }
     
-    // Render breadcrumb
-    if (notesBreadcrumbRoom) {
-        notesBreadcrumbRoom.innerHTML = '<span class="notes-breadcrumb-item-room" onclick="navigateToRoomFolder(null)">Home</span>';
-        
-        roomBreadcrumbPath.forEach((item) => {
-            notesBreadcrumbRoom.innerHTML += `<span style="color: var(--text-secondary);"> / </span><span class="notes-breadcrumb-item-room" onclick="navigateToRoomFolder('${item.id}')">${escapeHtml(item.name)}</span>`;
-        });
-    }
-    
-    // Render items
+    // Render notes
     if (notesListRoom) {
         notesListRoom.innerHTML = '';
         
         if (!items || items.length === 0) {
-            notesListRoom.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">No items in this folder</p>';
+            notesListRoom.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem; text-align: center;">No notes yet. Click "New Note" to create one.</p>';
         } else {
-            items.forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = `notes-item-room ${item.type === 'folder' ? 'folder' : ''} ${selectedRoomNoteId === item.id ? 'selected' : ''}`;
-                itemDiv.setAttribute('data-id', item.id);
-                itemDiv.setAttribute('data-type', item.type);
+            items.forEach(note => {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'notes-popup-item';
+                noteDiv.setAttribute('data-id', note.id);
                 
-                const icon = item.type === 'folder' ? '📁' : '📄';
-                itemDiv.innerHTML = `<span>${icon}</span><span style="flex: 1;">${escapeHtml(item.name)}</span>`;
+                if (editingNoteId === note.id) {
+                    // Show editor
+                    noteDiv.innerHTML = `
+                        <div class="notes-popup-editor">
+                            <input type="text" class="notes-popup-name-input" value="${escapeHtml(note.name)}" data-note-id="${note.id}">
+                            <textarea class="notes-popup-content-input" data-note-id="${note.id}">${escapeHtml(note.content || '')}</textarea>
+                            <div class="notes-popup-editor-actions">
+                                <button class="notes-popup-save-btn" onclick="saveNoteRoom('${note.id}')">Save</button>
+                                <button class="notes-popup-cancel-btn" onclick="cancelEditNote()">Cancel</button>
+                                <button class="notes-popup-delete-btn" onclick="deleteNoteRoom('${note.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Show note preview
+                    const preview = (note.content || '').substring(0, 100);
+                    noteDiv.innerHTML = `
+                        <div class="notes-popup-item-content" onclick="editNoteRoom('${note.id}')">
+                            <div class="notes-popup-item-name">${escapeHtml(note.name)}</div>
+                            <div class="notes-popup-item-preview">${escapeHtml(preview)}${note.content && note.content.length > 100 ? '...' : ''}</div>
+                        </div>
+                    `;
+                }
                 
-                itemDiv.addEventListener('click', () => {
-                    if (item.type === 'folder') {
-                        navigateToRoomFolder(item.id);
-                    } else {
-                        openRoomNote(item.id);
-                    }
-                });
-                
-                notesListRoom.appendChild(itemDiv);
+                notesListRoom.appendChild(noteDiv);
             });
         }
     }
 }
 
-// Navigate to folder in room
-window.navigateToRoomFolder = async function(folderId) {
-    currentRoomFolderId = folderId;
-    selectedRoomNoteId = null;
-    
-    // Update breadcrumb
-    if (!folderId) {
-        roomBreadcrumbPath = [];
-    } else {
-        // Load folder path
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            let currentId = folderId;
-            roomBreadcrumbPath = [];
-            while (currentId) {
-                const { data: folder } = await supabase
-                    .from('user_notes')
-                    .select('id, name, parent_id')
-                    .eq('id', currentId)
-                    .eq('user_id', session.user.id)
-                    .single();
-                
-                if (folder) {
-                    roomBreadcrumbPath.unshift(folder);
-                    currentId = folder.parent_id;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-    
-    await loadNotesForRoom(folderId);
-    if (noteEditorModalRoom) {
-        noteEditorModalRoom.classList.remove('show');
-    }
+// Edit note
+window.editNoteRoom = function(noteId) {
+    editingNoteId = noteId;
+    loadNotesForRoom();
 };
 
-// Open note in room (show in modal)
-window.openRoomNote = async function(noteId) {
+// Cancel editing
+window.cancelEditNote = function() {
+    editingNoteId = null;
+    loadNotesForRoom();
+};
+
+// Save note
+window.saveNoteRoom = async function(noteId) {
     if (!supabase || !supabase.auth) return;
     
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
     
-    selectedRoomNoteId = noteId;
+    const nameInput = document.querySelector(`.notes-popup-name-input[data-note-id="${noteId}"]`);
+    const contentInput = document.querySelector(`.notes-popup-content-input[data-note-id="${noteId}"]`);
     
-    const { data: note } = await supabase
-        .from('user_notes')
-        .select('*')
-        .eq('id', noteId)
-        .eq('user_id', session.user.id)
-        .single();
+    if (!nameInput || !contentInput) return;
     
-    if (!note) return;
-    
-    if (noteNameInputRoom) {
-        noteNameInputRoom.value = note.name;
-    }
-    if (noteContentTextareaRoom) {
-        noteContentTextareaRoom.value = note.content || '';
-    }
-    if (noteEditorModalRoom) {
-        noteEditorModalRoom.classList.add('show');
-        // Focus on textarea
-        setTimeout(() => {
-            if (noteContentTextareaRoom) {
-                noteContentTextareaRoom.focus();
-            }
-        }, 100);
-    }
-    
-    // Update selected state
-    await loadNotesForRoom(currentRoomFolderId);
-};
-
-// Close note editor modal
-window.closeNoteEditorRoom = function() {
-    if (noteEditorModalRoom) {
-        noteEditorModalRoom.classList.remove('show');
-    }
-    selectedRoomNoteId = null;
-};
-
-// Close modal when clicking outside
-if (noteEditorModalRoom) {
-    noteEditorModalRoom.addEventListener('click', (e) => {
-        if (e.target === noteEditorModalRoom) {
-            closeNoteEditorRoom();
-        }
-    });
-}
-
-// Save current note in room
-window.saveCurrentNoteRoom = async function() {
-    if (!selectedRoomNoteId) return;
-    
-    if (!supabase || !supabase.auth) return;
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    
-    if (!noteNameInputRoom || !noteContentTextareaRoom) return;
-    
-    const name = noteNameInputRoom.value.trim();
-    const content = noteContentTextareaRoom.value;
+    const name = nameInput.value.trim();
+    const content = contentInput.value;
     
     if (!name) {
         alert('Note name cannot be empty');
         return;
-    }
-    
-    const saveBtn = document.querySelector('.note-editor-modal-toolbar-right-room .notes-editor-btn-room');
-    const originalText = saveBtn ? saveBtn.textContent : 'Save';
-    
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
     }
     
     try {
@@ -3011,35 +2920,21 @@ window.saveCurrentNoteRoom = async function() {
                 content: content,
                 updated_at: new Date().toISOString()
             })
-            .eq('id', selectedRoomNoteId)
+            .eq('id', noteId)
             .eq('user_id', session.user.id);
         
         if (error) throw error;
         
-        // Show saved indicator
-        if (saveBtn) {
-            saveBtn.textContent = 'Saved!';
-            setTimeout(() => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
-            }, 2000);
-        }
-        
-        await loadNotesForRoom(currentRoomFolderId);
+        editingNoteId = null;
+        await loadNotesForRoom();
     } catch (error) {
         console.error('Error saving note:', error);
         alert('Failed to save note. Please try again.');
-        if (saveBtn) {
-            saveBtn.textContent = originalText;
-            saveBtn.disabled = false;
-        }
     }
 };
 
-// Delete current note in room
-window.deleteCurrentNoteRoom = async function() {
-    if (!selectedRoomNoteId) return;
-    
+// Delete note
+window.deleteNoteRoom = async function(noteId) {
     if (!confirm('Are you sure you want to delete this note?')) return;
     
     if (!supabase || !supabase.auth) return;
@@ -3051,54 +2946,20 @@ window.deleteCurrentNoteRoom = async function() {
         const { error } = await supabase
             .from('user_notes')
             .delete()
-            .eq('id', selectedRoomNoteId)
+            .eq('id', noteId)
             .eq('user_id', session.user.id);
         
         if (error) throw error;
         
-        closeNoteEditorRoom();
-        await loadNotesForRoom(currentRoomFolderId);
+        editingNoteId = null;
+        await loadNotesForRoom();
     } catch (error) {
         console.error('Error deleting note:', error);
         alert('Failed to delete note. Please try again.');
     }
 };
 
-// Create new folder in room
-if (newFolderBtnRoom) {
-    newFolderBtnRoom.addEventListener('click', async () => {
-        const name = prompt('Enter folder name:');
-        if (!name || !name.trim()) return;
-        
-        if (!supabase || !supabase.auth) return;
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-            alert('Please log in to create folders');
-            return;
-        }
-        
-        try {
-            const { error } = await supabase
-                .from('user_notes')
-                .insert({
-                    user_id: session.user.id,
-                    name: name.trim(),
-                    type: 'folder',
-                    parent_id: currentRoomFolderId
-                });
-            
-            if (error) throw error;
-            
-            await loadNotesForRoom(currentRoomFolderId);
-        } catch (error) {
-            console.error('Error creating folder:', error);
-            alert('Failed to create folder. Please try again.');
-        }
-    });
-}
-
-// Create new note in room
+// Create new note
 if (newNoteBtnRoom) {
     newNoteBtnRoom.addEventListener('click', async () => {
         const name = prompt('Enter note name:');
@@ -3119,24 +2980,24 @@ if (newNoteBtnRoom) {
                     user_id: session.user.id,
                     name: name.trim(),
                     type: 'note',
-                    parent_id: currentRoomFolderId,
+                    parent_id: null,
                     content: ''
-                })
-                .select()
-                .single();
+                });
             
             if (error) throw error;
             
-            selectedRoomNoteId = data.id;
-            await openRoomNote(data.id);
+            await loadNotesForRoom();
+            // Edit the newly created note
+            if (data && data.length > 0) {
+                editingNoteId = data[0].id;
+                await loadNotesForRoom();
+            }
         } catch (error) {
             console.error('Error creating note:', error);
             alert('Failed to create note. Please try again.');
         }
     });
 }
-
-// Note saving is now handled by saveCurrentNoteRoom() function (called via onclick in HTML)
 
 function escapeHtml(text) {
     const div = document.createElement('div');
