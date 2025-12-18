@@ -691,12 +691,13 @@ header .container {
     left: 0.75rem;
     background: rgba(0, 0, 0, 0.6);
     color: white;
-    padding: 0.25rem 0.5rem;
+    padding: 0.375rem 0.625rem;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     z-index: 3;
     backdrop-filter: blur(4px);
+    white-space: nowrap;
 }
 
 [data-theme="dark"] .room-card-participant-count {

@@ -499,10 +499,17 @@ async function createRoomCard(room) {
         ? `<div class="room-card-category"><span class="category-badge category-${room.category}">${capitalizeFirst(room.category)}</span></div>`
         : '';
     
+    // Format participant count text
+    const participantText = participantCount === 0 
+        ? 'No participants' 
+        : participantCount === 1 
+            ? '1 participant' 
+            : `${participantCount} participants`;
+    
     roomCard.innerHTML = `
         <div class="room-card-inner">
             <!-- Participant count top left -->
-            <div class="room-card-participant-count">${participantCount}</div>
+            <div class="room-card-participant-count">${participantText}</div>
             
             <!-- PFPs stacked in rows above category -->
             <div class="room-card-pfps-container">
