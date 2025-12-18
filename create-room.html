@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Room - Speakers Server</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .create-room-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+        }
+
+        .create-room-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--card-bg);
+        }
+
+        .create-room-header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-secondary);
+        }
+
+        .create-room-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .create-room-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+        }
+
+        .wizard-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-color);
+            z-index: 0;
+        }
+
+        .step-indicator::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            height: 2px;
+            background: var(--primary-color);
+            z-index: 1;
+            transition: width 0.3s ease;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-item.active .step-number {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .step-item.completed .step-number {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .step-item.completed .step-number::after {
+            content: '✓';
+            font-size: 1.2rem;
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .step-item.active .step-label {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .step-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-help-text {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-hidden {
+            visibility: hidden;
+        }
+
+        .character-count {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .character-count.warning {
+            color: #f59e0b;
+        }
+
+        .character-count.error {
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="create-room-container">
+        <header class="create-room-header">
+            <div class="create-room-header-content">
+                <button class="back-btn" onclick="window.location.href='index.html'" title="Back to Home">
+                    ←
+                </button>
+                <h1>Create New Room</h1>
+            </div>
+        </header>
+
+        <main class="create-room-content">
+            <div class="wizard-container">
+                <!-- Step Indicator -->
+                <div class="step-indicator" id="stepIndicator">
+                    <div class="step-item active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Title</div>
+                    </div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Description</div>
+                    </div>
+                    <div class="step-item" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Category</div>
+                    </div>
+                </div>
+
+                <form id="createRoomForm">
+                    <!-- Step 1: Title -->
+                    <div class="step-content active" data-step="1">
+                        <h2 class="step-title">What's your discussion about?</h2>
+                        <p class="step-description">Give your room a compelling title that will attract participants.</p>
+                        
+                        <div class="form-group">
+                            <label for="discussionTitle">Discussion Title</label>
+                            <input 
+                                type="text" 
+                                id="discussionTitle" 
+                                name="title" 
+                                placeholder="Enter a compelling title..." 
+                                required
+                                maxlength="100"
+                                autocomplete="off"
+                            >
+                            <div class="character-count" id="titleCount">0 / 100</div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Description -->
+                    <div class="step-content" data-step="2">
+                        <h2 class="step-title">Tell us more</h2>
+                        <p class="step-description">Add a description to help others understand what your discussion is about.</p>
+                        
+                        <div class="form-group">
+                            <label for="discussionDescription">Description</label>
+                            <textarea 
+                                id="discussionDescription" 
+                                name="description" 
+                                placeholder="What's this discussion about?" 
+                                rows="5" 
+                                required
+                                maxlength="500"
+                            ></textarea>
+                            <div class="character-count" id="descriptionCount">0 / 500</div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Category -->
+                    <div class="step-content" data-step="3">
+                        <h2 class="step-title">Choose a category</h2>
+                        <p class="step-description">Selecting a category helps users discover your room more easily.</p>
+                        
+                        <div class="form-group">
+                            <label for="category">
+                                Category 
+                                <span style="font-weight: normal; color: var(--text-secondary);">(Optional)</span>
+                            </label>
+                            <select id="category" name="category">
+                                <option value="">No category</option>
+                                <option value="debate">Debate</option>
+                                <option value="hot-takes">Hot Takes</option>
+                                <option value="chilling">Chilling</option>
+                                <option value="technology">Technology</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="science">Science</option>
+                                <option value="politics">Politics</option>
+                                <option value="sports">Sports</option>
+                                <option value="lifestyle">Lifestyle</option>
+                                <option value="education">Education</option>
+                                <option value="gaming">Gaming</option>
+                                <option value="general">General</option>
+                            </select>
+                            <small class="form-help-text">💡 Adding a category can help users find your room easier</small>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="wizard-actions">
+                        <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
+                        <div style="flex: 1;"></div>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">Create Room</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://rtxpelmkxxownbafiwmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eHBlbG1reHhvd25iYWZpd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTc5OTIsImV4cCI6MjA4MTQzMzk5Mn0.QKnVeBOaPYbkcSpm5zU2CtGa0uJ06z55Oas8Q-ShxZY';
+        
+        // Initialize Supabase
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.error('Supabase library not loaded');
+            var supabase = null;
+        }
+
+        // Check authentication
+        if (supabase) {
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (!session) {
+                    window.location.href = 'auth.html';
+                }
+            });
+        }
+
+        // Wizard state
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        // DOM elements
+        const form = document.getElementById('createRoomForm');
+        const stepIndicator = document.getElementById('stepIndicator');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const titleInput = document.getElementById('discussionTitle');
+        const descriptionInput = document.getElementById('discussionDescription');
+        const titleCount = document.getElementById('titleCount');
+        const descriptionCount = document.getElementById('descriptionCount');
+
+        // Character counters
+        titleInput.addEventListener('input', () => {
+            const count = titleInput.value.length;
+            titleCount.textContent = `${count} / 100`;
+            if (count > 90) {
+                titleCount.classList.add('warning');
+                titleCount.classList.remove('error');
+            } else if (count > 100) {
+                titleCount.classList.add('error');
+                titleCount.classList.remove('warning');
+            } else {
+                titleCount.classList.remove('warning', 'error');
+            }
+        });
+
+        descriptionInput.addEventListener('input', () => {
+            const count = descriptionInput.value.length;
+            descriptionCount.textContent = `${count} / 500`;
+            if (count > 450) {
+                descriptionCount.classList.add('warning');
+                descriptionCount.classList.remove('error');
+            } else if (count > 500) {
+                descriptionCount.classList.add('error');
+                descriptionCount.classList.remove('warning');
+            } else {
+                descriptionCount.classList.remove('warning', 'error');
+            }
+        });
+
+        // Update step indicator progress
+        function updateStepIndicator() {
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            stepIndicator.style.setProperty('--progress', `${progress}%`);
+            stepIndicator.querySelector('::after').style.width = `${progress}%`;
+
+            // Update step items
+            document.querySelectorAll('.step-item').forEach((item, index) => {
+                const stepNum = index + 1;
+                item.classList.remove('active', 'completed');
+                if (stepNum < currentStep) {
+                    item.classList.add('completed');
+                } else if (stepNum === currentStep) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Update progress bar
+            const progressBar = stepIndicator.querySelector('::after');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
+        }
+
+        // Show step
+        function showStep(step) {
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const stepContent = document.querySelector(`.step-content[data-step="${step}"]`);
+            if (stepContent) {
+                stepContent.classList.add('active');
+            }
+
+            // Update buttons
+            prevBtn.style.display = step > 1 ? 'block' : 'none';
+            nextBtn.style.display = step < totalSteps ? 'block' : 'none';
+            submitBtn.style.display = step === totalSteps ? 'block' : 'none';
+
+            updateStepIndicator();
+        }
+
+        // Validate current step
+        function validateStep(step) {
+            if (step === 1) {
+                return titleInput.value.trim().length > 0;
+            } else if (step === 2) {
+                return descriptionInput.value.trim().length > 0;
+            }
+            return true; // Step 3 (category) is optional
+        }
+
+        // Next button
+        nextBtn.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                showStep(currentStep);
+            } else {
+                alert('Please fill in all required fields before continuing.');
+            }
+        });
+
+        // Previous button
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateStep(currentStep)) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Get form values
+            const title = titleInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const category = document.getElementById('category').value || 'general';
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            try {
+                // Insert into Supabase
+                const { data, error } = await supabase
+                    .from('rooms')
+                    .insert([
+                        {
+                            title: title,
+                            description: description,
+                            category: category || 'general',
+                            active_participants: 1
+                        }
+                    ])
+                    .select();
+                
+                if (error) throw error;
+                
+                // Automatically join the room as host
+                if (data && data[0]) {
+                    window.location.href = `room.html?id=${data[0].id}&host=true`;
+                }
+                
+            } catch (error) {
+                console.error('Error creating room:', error);
+                alert('Failed to create room. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Room';
+            }
+        });
+
+        // Initialize
+        updateStepIndicator();
+    </script>
+</body>
+</html>
+

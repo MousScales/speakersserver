@@ -113,7 +113,7 @@ async function displayRooms(category = 'all') {
     }
 }
 
-// Open modal
+// Open create room page
 startBtn.addEventListener('click', async () => {
     // Check if user is authenticated
     const { data: { session } } = await supabase.auth.getSession();
@@ -123,7 +123,7 @@ startBtn.addEventListener('click', async () => {
         return;
     }
     
-    modal.style.display = 'block';
+    window.location.href = 'create-room.html';
 });
 
 // Close modal
