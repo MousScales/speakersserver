@@ -576,7 +576,8 @@ async function fetchNews() {
                 title: item.title,
                 description: item.description,
                 category: item.category || 'general',
-                sourceUrl: item.source_url || null
+                sourceUrl: item.source_url || null,
+                imageUrl: item.image_url || null
             }));
             console.log('News items loaded:', newsItems.length);
         } else {
@@ -636,7 +637,16 @@ async function initNewsSlideshow() {
     newsItems.forEach((news, index) => {
         const slide = document.createElement('div');
         slide.className = `news-slide ${index === 0 ? 'active' : ''}`;
+        
+        // Add background image if available
+        if (news.imageUrl) {
+            slide.style.backgroundImage = `url(${escapeHtml(news.imageUrl)})`;
+            slide.style.backgroundSize = 'cover';
+            slide.style.backgroundPosition = 'center';
+        }
+        
         slide.innerHTML = `
+            <div class="news-slide-overlay"></div>
             <div class="news-slide-content">
                 <h3 class="news-slide-title">${escapeHtml(news.title)}</h3>
                 <p class="news-slide-description">${escapeHtml(news.description)}</p>

@@ -61,6 +61,7 @@ module.exports = async function handler(req, res) {
                         description: article.description || article.title || 'No description',
                         category: article.category || 'politics',
                         sourceUrl: article.url,
+                        imageUrl: article.urlToImage || null,
                         publishedAt: article.publishedAt
                     }));
                 }
@@ -160,7 +161,7 @@ Return ONLY valid JSON array, no markdown, no code blocks, no explanations. Form
             .delete()
             .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
-        // Insert new news items with real article URLs
+        // Insert new news items with real article URLs and images
         const { data: insertedNews, error: insertError } = await supabase
             .from('news_items')
             .insert(
@@ -169,7 +170,8 @@ Return ONLY valid JSON array, no markdown, no code blocks, no explanations. Form
                     description: item.description,
                     category: item.category || 'politics',
                     date: today,
-                    source_url: item.sourceUrl
+                    source_url: item.sourceUrl,
+                    image_url: item.imageUrl || null
                 }))
             )
             .select();
