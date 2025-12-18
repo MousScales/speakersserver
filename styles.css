@@ -662,6 +662,57 @@ header .container {
 }
 
 /* Rooms Section */
+/* Sponsored Section */
+.sponsored-section {
+    padding: 2rem 0;
+}
+
+.sponsored-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.sponsored-section-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    position: relative;
+}
+
+.sponsored-line {
+    flex: 1;
+    height: 1px;
+    background: #3b82f6;
+}
+
+.sponsored-label {
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #3b82f6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.sponsored-rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    min-height: 100px;
+}
+
+.sponsored-rooms-grid:empty::before {
+    content: '';
+    display: block;
+}
+
 .rooms-section {
     padding: 2rem 0 4rem;
 }

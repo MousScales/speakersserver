@@ -38,6 +38,10 @@ const audienceSearch = document.getElementById('audienceSearch');
 const raisedHandsSection = document.getElementById('raisedHandsSection');
 const raisedHandsList = document.getElementById('raisedHandsList');
 const raisedHandsCount = document.getElementById('raisedHandsCount');
+const sponsorBtn = document.getElementById('sponsorBtn');
+const sponsorCountdown = document.getElementById('sponsorCountdown');
+const sponsorTimeLeft = document.getElementById('sponsorTimeLeft');
+let sponsorCountdownInterval = null;
 
 // State
 let currentUsername = '';
@@ -381,6 +385,19 @@ async function loadRoom() {
         
         // Set current room category for notes
         currentRoomCategory = data.category || 'general';
+        
+        // Check if room is sponsored and update countdown/button
+        if (data.sponsor_until) {
+            updateSponsorStatus(data.sponsor_until);
+        } else {
+            // Room not sponsored, show sponsor button
+            if (sponsorBtn) sponsorBtn.style.display = 'flex';
+            if (sponsorCountdown) sponsorCountdown.style.display = 'none';
+            if (sponsorCountdownInterval) {
+                clearInterval(sponsorCountdownInterval);
+                sponsorCountdownInterval = null;
+            }
+        }
         
     } catch (error) {
         console.error('Error loading room:', error);
@@ -1825,6 +1842,319 @@ raiseHandBtn.addEventListener('click', toggleHandRaise);
 participantsBtn.addEventListener('click', () => {
     participantsPanel.style.display = 'flex';
 });
+
+// Sponsor button functionality
+let stripe = null;
+let cardElement = null;
+let elements = null;
+let sponsorModal = null;
+
+// Initialize Stripe for sponsorship
+async function initializeStripeForSponsor() {
+    const stripePublishableKey = 'pk_live_51SE0RVRzY93579Xl7RUF0sSnvlFTaisVn7yay1dcgpy6QVMrjkOnR35qONxlxv1XHLeosVpNmaJvvJIkgJTp6JEb00ePj10p6u';
+    
+    if (typeof Stripe !== 'undefined' && stripePublishableKey) {
+        stripe = Stripe(stripePublishableKey);
+        elements = stripe.elements({
+            appearance: {
+                theme: 'stripe',
+                variables: {
+                    colorPrimary: getComputedStyle(document.documentElement).getPropertyValue('--primary-color') || '#3b82f6',
+                    colorBackground: getComputedStyle(document.documentElement).getPropertyValue('--bg-color') || '#ffffff',
+                    colorText: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#1f2937',
+                    colorDanger: '#ef4444',
+                    fontFamily: 'system-ui, sans-serif',
+                    spacingUnit: '4px',
+                    borderRadius: '6px',
+                },
+            },
+        });
+    }
+}
+
+// Show sponsor modal
+async function showSponsorModal() {
+    // Create modal if it doesn't exist
+    if (!sponsorModal) {
+        sponsorModal = document.createElement('div');
+        sponsorModal.className = 'sponsor-modal-overlay';
+        sponsorModal.innerHTML = `
+            <div class="sponsor-modal">
+                <div class="sponsor-modal-header">
+                    <h2>Sponsor This Room</h2>
+                    <button class="sponsor-modal-close" id="sponsorModalClose">&times;</button>
+                </div>
+                <div class="sponsor-modal-content">
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                        Sponsor this room for $20/hour. Your room will appear in the sponsored section on the home page.
+                    </p>
+                    <p style="margin-bottom: 1.5rem; color: #f59e0b; font-weight: 600; padding: 0.75rem; background: rgba(245, 158, 11, 0.1); border-radius: 6px; border-left: 3px solid #f59e0b;">
+                        ⚠️ Important: This charge is only for 1 hour. You must pay again to keep the sponsorship active after the hour expires.
+                    </p>
+                    <div id="sponsor-card-element" class="stripe-card-element">
+                        <!-- Stripe Elements will create form elements here -->
+                    </div>
+                    <div id="sponsor-card-errors" class="stripe-card-errors" role="alert"></div>
+                    <button class="sponsor-submit-btn" id="sponsorSubmitBtn">Pay $20 to Sponsor</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(sponsorModal);
+        
+        // Close button
+        document.getElementById('sponsorModalClose').addEventListener('click', () => {
+            closeSponsorModal();
+        });
+        
+        // Close on overlay click
+        sponsorModal.addEventListener('click', (e) => {
+            if (e.target === sponsorModal) {
+                closeSponsorModal();
+            }
+        });
+        
+        // Submit button
+        document.getElementById('sponsorSubmitBtn').addEventListener('click', handleSponsorPayment);
+    }
+    
+    sponsorModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Initialize Stripe if not already done
+    if (!stripe && typeof Stripe !== 'undefined') {
+        await initializeStripeForSponsor();
+    }
+    
+    // Mount card element
+    if (elements && !cardElement) {
+        const cardElementContainer = document.getElementById('sponsor-card-element');
+        if (cardElementContainer) {
+            cardElementContainer.innerHTML = '';
+            cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        fontSize: '16px',
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#1f2937',
+                        '::placeholder': {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#6b7280',
+                        },
+                    },
+                    invalid: {
+                        color: '#ef4444',
+                    },
+                },
+            });
+            
+            try {
+                cardElement.mount('#sponsor-card-element');
+                
+                cardElement.on('change', ({error}) => {
+                    const displayError = document.getElementById('sponsor-card-errors');
+                    if (error) {
+                        displayError.textContent = error.message;
+                    } else {
+                        displayError.textContent = '';
+                    }
+                });
+            } catch (error) {
+                console.error('Error mounting Stripe card element:', error);
+            }
+        }
+    }
+}
+
+// Close sponsor modal
+function closeSponsorModal() {
+    if (sponsorModal) {
+        sponsorModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Handle sponsor payment
+async function handleSponsorPayment() {
+    const submitBtn = document.getElementById('sponsorSubmitBtn');
+    
+    if (!cardElement) {
+        showNotification('Payment form not ready. Please wait...', 'error');
+        return;
+    }
+    
+    // Disable button
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    
+    try {
+        // Get user info
+        let userId = null;
+        if (typeof supabase !== 'undefined' && supabase) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                userId = session.user.id;
+            }
+        }
+        
+        // Create payment intent on backend
+        const response = await fetch('/api/create-sponsor-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                amount: 2000, // $20 in cents
+                roomId: roomId,
+                userId: userId
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to create payment');
+        }
+        
+        const { clientSecret } = await response.json();
+        
+        if (!clientSecret) {
+            throw new Error('No client secret returned');
+        }
+        
+        // Confirm payment with Stripe
+        const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+                card: cardElement,
+            }
+        });
+        
+        if (stripeError) {
+            throw new Error(stripeError.message);
+        }
+        
+        if (paymentIntent.status === 'succeeded') {
+            showNotification('Room sponsored successfully! It will appear in the sponsored section.', 'success');
+            closeSponsorModal();
+            
+            // Clear card element
+            if (cardElement) {
+                cardElement.clear();
+                cardElement = null;
+            }
+            
+            // Reload room data to get updated sponsor_until
+            await loadRoom();
+        }
+        
+    } catch (error) {
+        console.error('Sponsor payment error:', error);
+        showNotification(error.message || 'Failed to process sponsorship. Please try again.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Pay $20 to Sponsor';
+        }
+    }
+}
+
+// Show notification function (if not already defined)
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+if (sponsorBtn) {
+    sponsorBtn.addEventListener('click', showSponsorModal);
+}
+
+// Update sponsor status and countdown
+function updateSponsorStatus(sponsorUntil) {
+    const now = new Date();
+    const until = new Date(sponsorUntil);
+    
+    if (until <= now) {
+        // Sponsorship expired
+        if (sponsorBtn) sponsorBtn.style.display = 'flex';
+        if (sponsorCountdown) sponsorCountdown.style.display = 'none';
+        if (sponsorCountdownInterval) {
+            clearInterval(sponsorCountdownInterval);
+            sponsorCountdownInterval = null;
+        }
+        return;
+    }
+    
+    // Room is sponsored, hide button and show countdown
+    if (sponsorBtn) sponsorBtn.style.display = 'none';
+    if (sponsorCountdown) sponsorCountdown.style.display = 'flex';
+    
+    // Update countdown immediately
+    updateCountdown(until);
+    
+    // Update countdown every second
+    if (sponsorCountdownInterval) {
+        clearInterval(sponsorCountdownInterval);
+    }
+    
+    sponsorCountdownInterval = setInterval(() => {
+        const now = new Date();
+        if (until <= now) {
+            // Time expired
+            if (sponsorBtn) sponsorBtn.style.display = 'flex';
+            if (sponsorCountdown) sponsorCountdown.style.display = 'none';
+            clearInterval(sponsorCountdownInterval);
+            sponsorCountdownInterval = null;
+            
+            // Reload room to check if still sponsored
+            loadRoom();
+        } else {
+            updateCountdown(until);
+        }
+    }, 1000);
+}
+
+// Update countdown display
+function updateCountdown(until) {
+    const now = new Date();
+    const diff = until - now;
+    
+    if (diff <= 0) {
+        if (sponsorTimeLeft) sponsorTimeLeft.textContent = '00:00';
+        return;
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    let timeString = '';
+    if (hours > 0) {
+        timeString = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+        timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    if (sponsorTimeLeft) {
+        sponsorTimeLeft.textContent = timeString;
+    }
+}
 
 closePanelBtn.addEventListener('click', () => {
     participantsPanel.style.display = 'none';

@@ -86,7 +86,7 @@ async function displayRoomsByCategory() {
     
     // Define category order and display names
     const categoryOrder = [
-        { key: 'currently-live', name: 'Currently Live', filter: (room) => (room.active_participants || 0) > 0, sort: (a, b) => (b.active_participants || 0) - (a.active_participants || 0) },
+        { key: 'currently-live', name: 'Currently Live', filter: () => true, sort: (a, b) => (b.active_participants || 0) - (a.active_participants || 0) },
         { key: 'popular', name: 'Popular', sort: (a, b) => (b.active_participants || 0) - (a.active_participants || 0) },
         { key: 'new', name: 'New', filter: (room) => {
             const oneDayAgo = new Date();
@@ -95,8 +95,7 @@ async function displayRoomsByCategory() {
         }, sort: (a, b) => new Date(b.created_at) - new Date(a.created_at) },
         { key: 'debate', name: 'Debate' },
         { key: 'hot-takes', name: 'Hot Takes' },
-        { key: 'chilling', name: 'Chilling' },
-        { key: 'general', name: 'General' }
+        { key: 'chilling', name: 'Chilling' }
     ];
     
     // Process each category
@@ -104,7 +103,7 @@ async function displayRoomsByCategory() {
         let categoryRooms = [];
         
         if (cat.key === 'currently-live') {
-            categoryRooms = allRooms.filter(cat.filter).sort(cat.sort).slice(0, 10); // Top 10 currently live
+            categoryRooms = allRooms.sort(cat.sort).slice(0, 10); // Top 10 all rooms
         } else if (cat.key === 'popular') {
             categoryRooms = [...allRooms].sort(cat.sort).slice(0, 10); // Top 10 popular
         } else if (cat.key === 'new') {
@@ -122,20 +121,15 @@ async function displayRoomsByCategory() {
             const header = document.createElement('div');
             header.className = 'category-section-header';
             
-            // Only show "View all" if there are rooms
-            const viewAllBtn = categoryRooms.length > 0 
-                ? `<button class="view-all-btn" data-category="${cat.key}">View all</button>`
-                : '';
-            
             // Add color class for specific categories
             const categoryClass = cat.key === 'hot-takes' ? 'category-hot-takes-text' 
                 : cat.key === 'debate' ? 'category-debate-text'
                 : cat.key === 'chilling' ? 'category-chilling-text'
                 : '';
             
+            // Initially create header without "View all" button
             header.innerHTML = `
                 <h3 class="category-section-title ${categoryClass}">${cat.name}</h3>
-                ${viewAllBtn}
             `;
             
             const grid = document.createElement('div');
@@ -156,14 +150,22 @@ async function displayRoomsByCategory() {
             section.appendChild(grid);
             categorySections.appendChild(section);
             
-            // Add click handler for "View all" button if it exists
+            // Check if grid scrolls (more rooms than fit in one row) and show "View all" button
             if (categoryRooms.length > 0) {
-                const viewAllButton = header.querySelector('.view-all-btn');
-                if (viewAllButton) {
-                    viewAllButton.addEventListener('click', () => {
-                        showCategoryView(cat.key, cat.name);
-                    });
-                }
+                // Wait for layout to be calculated
+                requestAnimationFrame(() => {
+                    // Check if the grid has horizontal scrolling (more rooms than visible)
+                    if (grid.scrollWidth > grid.clientWidth) {
+                        const viewAllButton = document.createElement('button');
+                        viewAllButton.className = 'view-all-btn';
+                        viewAllButton.setAttribute('data-category', cat.key);
+                        viewAllButton.textContent = 'View all';
+                        viewAllButton.addEventListener('click', () => {
+                            showCategoryView(cat.key, cat.name);
+                        });
+                        header.appendChild(viewAllButton);
+                    }
+                });
             }
         }
     }
@@ -185,8 +187,7 @@ function showCategoryView(categoryKey, categoryName) {
     let filteredRooms = [];
     
     if (categoryKey === 'currently-live') {
-        filteredRooms = allRooms.filter(room => (room.active_participants || 0) > 0)
-            .sort((a, b) => (b.active_participants || 0) - (a.active_participants || 0));
+        filteredRooms = allRooms.sort((a, b) => (b.active_participants || 0) - (a.active_participants || 0));
     } else if (categoryKey === 'popular') {
         filteredRooms = [...allRooms].sort((a, b) => (b.active_participants || 0) - (a.active_participants || 0));
     } else if (categoryKey === 'new') {
@@ -378,7 +379,7 @@ if (discussionForm) {
     // Get form values
     const title = document.getElementById('discussionTitle').value;
     const description = document.getElementById('discussionDescription').value;
-    const category = document.getElementById('category').value || 'general'; // Default to 'general' if empty
+    const category = document.getElementById('category').value || null; // No default category
     
     // Disable submit button
     const submitBtn = document.getElementById('submitBtn');
@@ -395,7 +396,7 @@ if (discussionForm) {
                 {
                     title: title,
                     description: description,
-                    category: category || 'general', // Default to 'general' if empty
+                    category: category || null, // No default category
                     active_participants: 1
                 }
             ])
@@ -677,7 +678,7 @@ async function fetchQuestions() {
                             newsItems = result.questions.map(item => ({
                                 title: item.question,
                                 description: item.question,
-                                category: item.category || 'general',
+                                category: item.category || null,
                                 sourceUrl: null,
                                 imageUrl: null
                             }));
@@ -867,6 +868,65 @@ function goToNewsSlide(index) {
     currentNewsSlide = index;
 }
 
+// Load sponsored rooms
+async function loadSponsoredRooms() {
+    const sponsoredGrid = document.getElementById('sponsoredRoomsGrid');
+    const sponsoredSection = document.querySelector('.sponsored-section');
+    if (!sponsoredGrid || !sponsoredSection) return;
+    
+    try {
+        if (!supabase) {
+            sponsoredGrid.innerHTML = '';
+            sponsoredSection.style.display = 'none';
+            return;
+        }
+        
+        // Get current time
+        const now = new Date();
+        
+        // Query for active sponsorships (sponsor_until > now)
+        const { data: sponsoredData, error } = await supabase
+            .from('rooms')
+            .select('*')
+            .not('sponsor_until', 'is', null)
+            .gt('sponsor_until', now.toISOString())
+            .order('sponsor_until', { ascending: false })
+            .limit(10);
+        
+        if (error) {
+            console.error('Error loading sponsored rooms:', error);
+            sponsoredGrid.innerHTML = '';
+            sponsoredSection.style.display = 'none';
+            return;
+        }
+        
+        if (!sponsoredData || sponsoredData.length === 0) {
+            sponsoredGrid.innerHTML = '';
+            sponsoredSection.style.display = 'none';
+            return;
+        }
+        
+        // Show section and clear grid
+        sponsoredSection.style.display = 'block';
+        sponsoredGrid.innerHTML = '';
+        
+        // Create room cards for sponsored rooms
+        for (const room of sponsoredData) {
+            const card = await createRoomCard(room);
+            sponsoredGrid.appendChild(card);
+        }
+        
+    } catch (error) {
+        console.error('Error loading sponsored rooms:', error);
+        if (sponsoredGrid) {
+            sponsoredGrid.innerHTML = '';
+        }
+        if (sponsoredSection) {
+            sponsoredSection.style.display = 'none';
+        }
+    }
+}
+
 // Load rooms from Supabase
 async function loadRooms() {
     try {
@@ -962,6 +1022,8 @@ function subscribeToRooms() {
                 allRooms.unshift(payload.new);
                 displayRoomsByCategory();
             }
+            // Refresh sponsored rooms when any room is updated
+            loadSponsoredRooms();
         })
         .on('postgres_changes', {
             event: 'DELETE',
@@ -1536,6 +1598,7 @@ async function init() {
     setupStartButton(); // Setup the start conversation button
     await updateLoginButton();
     initQuestionsSlideshow();
+    await loadSponsoredRooms();
     await loadRooms();
     subscribeToRooms();
     
@@ -1543,6 +1606,11 @@ async function init() {
     supabase.auth.onAuthStateChange((event, session) => {
         updateLoginButton();
     });
+    
+    // Refresh sponsored rooms every minute
+    setInterval(() => {
+        loadSponsoredRooms();
+    }, 60000);
 }
 
 // Theme toggle functionality

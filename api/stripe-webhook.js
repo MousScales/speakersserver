@@ -27,11 +27,35 @@ module.exports = async (req, res) => {
         if (SUPABASE_SERVICE_KEY) {
             const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
             
-            // Update donation status to succeeded
-            await supabase
-                .from('donations')
-                .update({ status: 'succeeded' })
-                .eq('payment_intent_id', paymentIntent.id);
+            // Check if this is a sponsorship payment
+            if (paymentIntent.metadata && paymentIntent.metadata.type === 'sponsorship') {
+                // Update sponsorship status
+                const { data: sponsorship } = await supabase
+                    .from('sponsorships')
+                    .select('room_id, sponsor_until')
+                    .eq('payment_intent_id', paymentIntent.id)
+                    .single();
+                
+                if (sponsorship) {
+                    // Update sponsorship status
+                    await supabase
+                        .from('sponsorships')
+                        .update({ status: 'succeeded' })
+                        .eq('payment_intent_id', paymentIntent.id);
+                    
+                    // Update room's sponsor_until field
+                    await supabase
+                        .from('rooms')
+                        .update({ sponsor_until: sponsorship.sponsor_until })
+                        .eq('id', sponsorship.room_id);
+                }
+            } else {
+                // Update donation status to succeeded
+                await supabase
+                    .from('donations')
+                    .update({ status: 'succeeded' })
+                    .eq('payment_intent_id', paymentIntent.id);
+            }
         }
     } else if (event.type === 'payment_intent.payment_failed') {
         const paymentIntent = event.data.object;
@@ -39,11 +63,20 @@ module.exports = async (req, res) => {
         if (SUPABASE_SERVICE_KEY) {
             const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
             
-            // Update donation status to failed
-            await supabase
-                .from('donations')
-                .update({ status: 'failed' })
-                .eq('payment_intent_id', paymentIntent.id);
+            // Check if this is a sponsorship payment
+            if (paymentIntent.metadata && paymentIntent.metadata.type === 'sponsorship') {
+                // Update sponsorship status to failed
+                await supabase
+                    .from('sponsorships')
+                    .update({ status: 'failed' })
+                    .eq('payment_intent_id', paymentIntent.id);
+            } else {
+                // Update donation status to failed
+                await supabase
+                    .from('donations')
+                    .update({ status: 'failed' })
+                    .eq('payment_intent_id', paymentIntent.id);
+            }
         }
     }
 

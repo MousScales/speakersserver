@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="room.css">
     <link rel="stylesheet" href="animations.css">
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <div class="room-container">
@@ -94,6 +96,16 @@
                     <button class="control-btn" id="notesBtn" title="View Notes" style="display: none;">
                         <span>📝</span> Notes
                     </button>
+                    
+                    <!-- Sponsor button (everyone can see) -->
+                    <button class="control-btn sponsor-btn" id="sponsorBtn" title="Sponsor this room - $20/hour" style="display: none;">
+                        <span>⭐</span> Sponsor
+                    </button>
+                    
+                    <!-- Sponsor countdown (shown when room is sponsored) -->
+                    <div class="sponsor-countdown" id="sponsorCountdown" style="display: none;">
+                        <span>⭐</span> <span id="sponsorTimeLeft">--:--</span>
+                    </div>
                     
                     <!-- Participants button (everyone can see) -->
                     <button class="control-btn" id="participantsBtn" title="View Participants">
