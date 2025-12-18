@@ -713,13 +713,17 @@ header .container {
     background: rgba(255, 255, 255, 0.2);
 }
 
-/* PFPs Container - Stacked in rows above category */
+/* PFPs Container - Start from top left under participant count */
 .room-card-pfps-container {
     position: absolute;
-    bottom: 3rem;
+    top: 3.5rem; /* Below participant count */
     left: 1rem;
     right: 1rem;
     z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    align-content: flex-start;
 }
 
 /* Category Badge - Bottom Right */
@@ -745,7 +749,7 @@ header .container {
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: flex-start;
 }
 
