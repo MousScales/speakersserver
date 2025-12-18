@@ -298,11 +298,14 @@
     height: 100%;
     border-radius: 50%;
     background: var(--bg-tertiary);
+    background-size: cover;
+    background-position: center;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     color: white;
+    overflow: hidden;
     font-size: 48px;
 }
 
@@ -496,6 +499,8 @@
     height: 64px;
     border-radius: 50%;
     background: var(--bg-tertiary);
+    background-size: cover;
+    background-position: center;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -503,7 +508,7 @@
     color: var(--text-primary);
     font-size: 20px;
     position: relative;
-    overflow: visible;
+    overflow: hidden;
 }
 
 [data-theme="light"] .audience-member-avatar {
@@ -951,6 +956,8 @@
     height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: cover;
+    background-position: center;
     color: white;
     display: flex;
     align-items: center;
@@ -958,6 +965,7 @@
     font-weight: 600;
     font-size: 0.875rem;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .participant-info {
