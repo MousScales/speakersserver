@@ -692,6 +692,23 @@ function updateSpeakersList() {
             showParticipantMenu(speaker);
         });
         
+        // Check if this participant is currently speaking (from LiveKit)
+        if (livekitRoom) {
+            // Check remote participants
+            livekitRoom.remoteParticipants.forEach((participant, identity) => {
+                if ((identity === speaker.user_id || identity === speaker.username) && participant.isSpeaking) {
+                    tile.classList.add('speaking');
+                }
+            });
+            // Check local participant
+            if (livekitRoom.localParticipant && 
+                (livekitRoom.localParticipant.identity === speaker.user_id || 
+                 livekitRoom.localParticipant.identity === speaker.username) &&
+                livekitRoom.localParticipant.isSpeaking) {
+                tile.classList.add('speaking');
+            }
+        }
+        
         // For 2-5 speakers, insert in order that centers them
         // For 1 speaker, just append (will be centered by CSS)
         // For 6+, just append (grid will handle layout)
@@ -1909,7 +1926,21 @@ async function connectToLiveKit(canPublish = true) {
                     enabled: pub.track !== undefined
                 }))
             });
+            // Setup listeners for existing remote participants
+            setupParticipantListeners(participant);
         });
+        
+        // Check speaking status for all existing participants
+        livekitRoom.remoteParticipants.forEach((participant, identity) => {
+            if (participant.isSpeaking) {
+                updateSpeakingStatus(identity, true);
+            }
+        });
+        
+        // Check local participant speaking status
+        if (livekitRoom.localParticipant && livekitRoom.localParticipant.isSpeaking) {
+            updateSpeakingStatus(livekitRoom.localParticipant.identity, true);
+        }
         
         // Auto-enable mic for host only
         if (currentRole === 'host' && canPublish) {
