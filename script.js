@@ -134,6 +134,60 @@ let allRooms = []; // Store all rooms from database
 let searchQuery = ''; // Current search query
 let isSearching = false; // Whether user is currently searching
 
+// Display search results - filter rooms by title
+function displaySearchResults() {
+    const categorySections = document.getElementById('categorySections');
+    if (!categorySections) return;
+    
+    categorySections.innerHTML = '';
+    
+    // Filter rooms by title (case-insensitive)
+    const query = searchQuery.trim().toLowerCase();
+    const filteredRooms = allRooms.filter(room => {
+        if (!room.title) return false;
+        return room.title.toLowerCase().includes(query);
+    });
+    
+    // Create a single section for search results
+    if (filteredRooms.length > 0) {
+        const section = document.createElement('div');
+        section.className = 'category-section';
+        section.setAttribute('data-category', 'search-results');
+        
+        const header = document.createElement('div');
+        header.className = 'category-section-header';
+        header.innerHTML = `
+            <h3 class="category-section-title">Search Results (${filteredRooms.length})</h3>
+        `;
+        
+        const grid = document.createElement('div');
+        grid.className = 'rooms-grid';
+        
+        // Create all room cards in parallel
+        Promise.all(filteredRooms.map(room => createRoomCard(room)))
+            .then(cards => {
+                cards.forEach(card => grid.appendChild(card));
+            });
+        
+        section.appendChild(header);
+        section.appendChild(grid);
+        categorySections.appendChild(section);
+    } else {
+        // Show "No results" message
+        const section = document.createElement('div');
+        section.className = 'category-section';
+        section.innerHTML = `
+            <div class="category-section-header">
+                <h3 class="category-section-title">Search Results</h3>
+            </div>
+            <div class="rooms-grid" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                <p>No rooms found matching "${escapeHtml(searchQuery)}"</p>
+            </div>
+        `;
+        categorySections.appendChild(section);
+    }
+}
+
 // Group rooms by category and display in sections
 async function displayRoomsByCategory() {
     const categorySections = document.getElementById('categorySections');
