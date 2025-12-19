@@ -70,12 +70,14 @@
             <header class="room-header" style="flex-shrink: 0;">
                 <div class="room-info">
                     <h1 id="roomTitle">Room Title</h1>
-                    <span class="room-category" id="roomCategory"></span>
-                    <span class="room-role" id="roomRole">Participant</span>
-                    <!-- Participants button - after title and role -->
-                    <button class="control-btn participants-btn-header" id="participantsBtn" title="View Participants">
-                        <span>👥</span> <span id="participantCount">0</span>
-                    </button>
+                    <div class="room-info-row">
+                        <span class="room-category" id="roomCategory"></span>
+                        <span class="room-role" id="roomRole">Participant</span>
+                        <!-- Participants button - after category and role -->
+                        <button class="control-btn participants-btn-header" id="participantsBtn" title="View Participants">
+                            <span>👥</span> <span id="participantCount">0</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Mobile Chat Button (only visible on mobile) - outside controls for visibility -->

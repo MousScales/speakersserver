@@ -1887,6 +1887,9 @@
 @media (max-width: 768px) {
     .room-container {
         grid-template-columns: 1fr;
+        height: 100vh;
+        height: 100dvh; /* Use dynamic viewport height for mobile */
+        overflow: hidden;
         grid-template-rows: auto 1fr;
     }
     
@@ -2035,9 +2038,9 @@
         flex: 1;
         min-width: 0;
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.375rem;
     }
     
     .room-info h1 {
@@ -2046,19 +2049,44 @@
         overflow: hidden;
         text-overflow: ellipsis;
         margin: 0;
+        width: 100%;
         flex-shrink: 1;
+    }
+    
+    /* Category and role on same line under title */
+    .room-info-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
     }
     
     .room-category {
         font-size: 0.625rem;
         padding: 0.1875rem 0.375rem;
         flex-shrink: 0;
+        order: 1;
     }
     
     .room-role {
         font-size: 0.625rem;
         padding: 0.1875rem 0.375rem;
         flex-shrink: 0;
+        order: 2;
+    }
+    
+    /* Participants button on same row as category/role */
+    .participants-btn-header {
+        order: 3;
+        margin-left: 0;
+        margin-top: 0;
+    }
+    
+    /* Hide room-info-row wrapper on desktop (it's only for mobile layout) */
+    @media (min-width: 769px) {
+        .room-info-row {
+            display: contents; /* Remove wrapper on desktop */
+        }
     }
     
     /* Show hamburger menu button on mobile */
@@ -2149,6 +2177,83 @@
     /* Hide participants button from header on mobile (it's in menu) */
     .participants-btn-header {
         display: none !important;
+    }
+    
+    /* Prevent body scrolling on mobile - only allow audience section to scroll */
+    body {
+        overflow: hidden !important;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+    }
+    
+    html {
+        overflow: hidden !important;
+        height: 100%;
+    }
+    
+    /* Ensure room-main takes full viewport */
+    .room-main {
+        height: 100vh;
+        height: 100dvh; /* Use dynamic viewport height for mobile */
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Main content area - flex layout with proper heights */
+    .main-content-area {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    /* Active speakers section - fixed height, no scroll */
+    .active-speakers-section {
+        flex-shrink: 0;
+        height: 50%;
+        min-height: 0;
+        overflow: hidden;
+    }
+    
+    /* Audience section - scrollable, takes remaining space */
+    .audience-section {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 50%;
+        padding: 1rem 1rem;
+    }
+    
+    /* Audience header - fixed, no scroll */
+    .audience-header {
+        flex-shrink: 0;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Raised hands section - fixed height, scrollable if needed */
+    .raised-hands-section {
+        flex-shrink: 0;
+        margin-bottom: 0.75rem;
+    }
+    
+    .raised-hands-list {
+        max-height: 150px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    /* Audience list - scrollable, takes all remaining space */
+    .audience-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     }
     
     /* Hide Leave button from header on mobile (it's in the hamburger menu) */
