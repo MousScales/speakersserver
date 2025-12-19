@@ -670,6 +670,60 @@ header .container {
 }
 
 /* Rooms Section */
+/* Search Section */
+.search-section {
+    padding: 1.5rem 0;
+}
+
+.search-bar-container {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.room-search-input {
+    width: 100%;
+    padding: 0.875rem 3rem 0.875rem 1.25rem;
+    font-size: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.room-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.room-search-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+    transition: color 0.2s ease;
+    border-radius: 4px;
+}
+
+.clear-search-btn:hover {
+    color: var(--text-color);
+    background: var(--border-color);
+}
+
 /* Sponsored Section */
 .sponsored-section {
     padding: 2rem 0;
@@ -1309,7 +1363,6 @@ header .container {
 .room-card:hover .room-card-inner {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     border-color: var(--primary-color);
-    transform: scale(1.02);
 }
 
 .room-card.hidden {

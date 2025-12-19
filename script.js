@@ -76,6 +76,8 @@ function closeConversationForm() {
 
 // Room organization by category
 let allRooms = []; // Store all rooms from database
+let searchQuery = ''; // Current search query
+let isSearching = false; // Whether user is currently searching
 
 // Group rooms by category and display in sections
 async function displayRoomsByCategory() {
@@ -83,6 +85,12 @@ async function displayRoomsByCategory() {
     if (!categorySections) return;
     
     categorySections.innerHTML = '';
+    
+    // If searching, show only search results
+    if (isSearching && searchQuery.trim()) {
+        displaySearchResults();
+        return;
+    }
     
     // Define category order and display names
     const categoryOrder = [
@@ -906,8 +914,12 @@ async function loadSponsoredRooms() {
             return;
         }
         
-        // Show section and clear grid
-        sponsoredSection.style.display = 'block';
+        // Show section and clear grid (only if not searching)
+        if (!isSearching && sponsoredData.length > 0) {
+            sponsoredSection.style.display = 'block';
+        } else {
+            sponsoredSection.style.display = 'none';
+        }
         sponsoredGrid.innerHTML = '';
         
         // Create room cards for sponsored rooms
@@ -1593,9 +1605,55 @@ function formatRelativeTime(date) {
     return date.toLocaleDateString();
 }
 
+// Setup search functionality
+function setupSearch() {
+    const searchInput = document.getElementById('roomSearchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    
+    if (!searchInput) return;
+    
+    // Search on input
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        isSearching = searchQuery.trim().length > 0;
+        
+        if (isSearching) {
+            clearSearchBtn.style.display = 'block';
+            displayRoomsByCategory(); // This will trigger search results
+        } else {
+            clearSearchBtn.style.display = 'none';
+            isSearching = false;
+            displayRoomsByCategory();
+        }
+    });
+    
+    // Clear search
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchQuery = '';
+            isSearching = false;
+            clearSearchBtn.style.display = 'none';
+            displayRoomsByCategory();
+            searchInput.focus();
+        });
+    }
+    
+    // Handle Enter key
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+                displayRoomsByCategory();
+            }
+        }
+    });
+}
+
 // Initialize the app
 async function init() {
     setupStartButton(); // Setup the start conversation button
+    setupSearch(); // Setup search functionality
     await updateLoginButton();
     initQuestionsSlideshow();
     await loadSponsoredRooms();

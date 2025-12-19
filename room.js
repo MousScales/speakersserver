@@ -41,6 +41,7 @@ const raisedHandsCount = document.getElementById('raisedHandsCount');
 const sponsorBtn = document.getElementById('sponsorBtn');
 const sponsorCountdown = document.getElementById('sponsorCountdown');
 const sponsorTimeLeft = document.getElementById('sponsorTimeLeft');
+const shareBtn = document.getElementById('shareBtn');
 let sponsorCountdownInterval = null;
 
 // State
@@ -2083,6 +2084,36 @@ function showNotification(message, type = 'success') {
 
 if (sponsorBtn) {
     sponsorBtn.addEventListener('click', showSponsorModal);
+}
+
+// Share room link functionality
+if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+        const roomLink = `${window.location.origin}${window.location.pathname}?id=${roomId}`;
+        
+        try {
+            // Try to use the Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(roomLink);
+                showNotification('Room link copied to clipboard!', 'success');
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = roomLink;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification('Room link copied to clipboard!', 'success');
+            }
+        } catch (error) {
+            console.error('Failed to copy link:', error);
+            // Fallback: show the link in a prompt
+            prompt('Copy this room link:', roomLink);
+        }
+    });
 }
 
 // Update sponsor status and countdown

@@ -149,8 +149,12 @@ a, button, input, select, textarea {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.card:hover, .room-card:hover, .donate-leaderboard-item:hover, .donate-recent-item:hover {
+.card:hover, .donate-leaderboard-item:hover, .donate-recent-item:hover {
     transform: translateY(-4px);
+}
+
+.room-card:hover {
+    /* No transform - keep size constant */
 }
 
 /* Smooth text transitions */
