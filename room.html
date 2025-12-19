@@ -72,20 +72,27 @@
                     <h1 id="roomTitle">Room Title</h1>
                     <span class="room-category" id="roomCategory"></span>
                     <span class="room-role" id="roomRole">Participant</span>
+                    <!-- Participants button - after title and role -->
+                    <button class="control-btn participants-btn-header" id="participantsBtn" title="View Participants">
+                        <span>👥</span> <span id="participantCount">0</span>
+                    </button>
                 </div>
+                
+                <!-- Mobile Chat Button (only visible on mobile) - outside controls for visibility -->
+                <button class="chat-btn-mobile" id="chatBtnMobile" title="Open Chat" style="display: none;">
+                    <span>💬</span>
+                </button>
+                
+                <!-- Hamburger Menu Button (Mobile Only) -->
+                <button class="hamburger-menu-btn" id="hamburgerMenuBtn" title="Menu">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                
                 <div class="room-controls">
-                    <button class="theme-toggle-btn-room" id="themeToggleBtnRoom" title="Toggle theme">
-                        <span class="theme-icon-room">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                            </svg>
-                        </span>
-                    </button>
-                    
-                    <!-- Participant controls -->
-                    <button class="control-btn" id="raiseHandBtn" title="Raise Hand" style="display: none;">
-                        <span>✋</span> Raise Hand
-                    </button>
                     
                     <!-- Speaker controls (when invited to speak) -->
                     <button class="control-btn" id="micBtn" title="Mute/Unmute" style="display: none;">
@@ -97,34 +104,50 @@
                         <span>📝</span> Notes
                     </button>
                     
-                    <!-- Share button (everyone can see) -->
-                    <button class="control-btn share-btn" id="shareBtn" title="Share room link">
-                        <span>🔗</span> Share
+                    <!-- Share button (everyone can see) - Apple share icon -->
+                    <button class="share-btn-icon" id="shareBtn" title="Share room link">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
                     </button>
                     
                     <!-- Sponsor button (everyone can see) -->
                     <button class="control-btn sponsor-btn" id="sponsorBtn" title="Sponsor this room - $20/hour" style="display: none;">
                         <span>⭐</span> Sponsor
                     </button>
-                    
+                </div>
+                
+                <!-- Sponsor countdown, End Meeting, and Leave button - together on the right -->
+                <div class="header-right-controls">
                     <!-- Sponsor countdown (shown when room is sponsored) -->
                     <div class="sponsor-countdown" id="sponsorCountdown" style="display: none;">
                         <span>⭐</span> <span id="sponsorTimeLeft">--:--</span>
                     </div>
-                    
-                    <!-- Participants button (everyone can see) -->
-                    <button class="control-btn" id="participantsBtn" title="View Participants">
-                        <span>👥</span> <span id="participantCount">0</span>
-                    </button>
-                    
+                    <!-- End Meeting button (for host) -->
                     <button class="control-btn" id="endMeetingBtn" title="End Meeting" style="display: none;">
                         <span>🔴</span> End Meeting
                     </button>
+                    <!-- Leave button -->
                     <button class="control-btn leave" id="leaveBtn" title="Leave Room">
                         <span>🚪</span> Leave
                     </button>
                 </div>
             </header>
+            
+            <!-- Mobile Menu Panel -->
+            <div class="mobile-menu-overlay" id="mobileMenuOverlay" style="display: none;">
+                <div class="mobile-menu-panel">
+                    <div class="mobile-menu-header">
+                        <h3>Menu</h3>
+                        <button class="mobile-menu-close" id="mobileMenuClose">&times;</button>
+                    </div>
+                    <div class="mobile-menu-content" id="mobileMenuContent">
+                        <!-- Menu items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
 
             <!-- Main Content Area -->
             <div class="main-content-area" id="mainContentArea">
@@ -139,7 +162,13 @@
                 <div class="audience-section">
                     <div class="audience-header">
                         <h3>Audience — <span id="audienceCount">0</span></h3>
-                        <input type="text" class="audience-search" placeholder="Search" id="audienceSearch">
+                        <div class="audience-header-controls">
+                            <!-- Raise Hand button moved here on desktop -->
+                            <button class="control-btn raise-hand-audience" id="raiseHandBtn" title="Raise Hand" style="display: none;">
+                                Raise Hand
+                            </button>
+                            <input type="text" class="audience-search" placeholder="Search" id="audienceSearch">
+                        </div>
                     </div>
                     <!-- Raised Hands Section -->
                     <div class="raised-hands-section" id="raisedHandsSection" style="display: none;">
@@ -172,7 +201,7 @@
             </div>
         </div>
 
-        <!-- Right Sidebar - Chat -->
+        <!-- Right Sidebar - Chat (Desktop) -->
         <aside class="chat-sidebar">
             <div class="sidebar-header">
                 <h3>Chat</h3>
@@ -196,6 +225,36 @@
                 </p>
             </div>
         </aside>
+        
+        <!-- Mobile Chat Panel (slide-out) -->
+        <div class="chat-panel-overlay" id="chatPanelOverlay">
+            <div class="chat-panel-mobile">
+                <div class="chat-panel-header-mobile">
+                    <h3>Chat</h3>
+                    <span class="chat-badge">Everyone can chat</span>
+                    <button class="chat-panel-close" id="chatPanelClose">&times;</button>
+                </div>
+                <div class="chat-panel-content-mobile">
+                    <div class="chat-messages" id="chatMessagesMobile">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                    <div class="chat-input-container" id="chatInputContainerMobile">
+                        <input 
+                            type="text" 
+                            id="chatInputMobile" 
+                            placeholder="Type a message..."
+                            autocomplete="off"
+                        >
+                        <button id="sendBtnMobile" class="send-btn">Send</button>
+                    </div>
+                    <div class="chat-login-prompt" id="chatLoginPromptMobile" style="display: none;">
+                        <p style="text-align: center; padding: 1rem; color: var(--text-secondary);">
+                            <a href="auth.html" style="color: var(--primary-color); text-decoration: underline;">Login</a> to join the chat
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Meeting Ended Modal -->

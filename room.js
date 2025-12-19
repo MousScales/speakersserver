@@ -442,6 +442,9 @@ async function updateUIForRole() {
         }
     }
     
+    // Update mobile chat UI
+    updateMobileChatUI();
+    
     // Show/hide End Meeting button for hosts
     if (endMeetingBtn) {
         if (currentRole === 'host') {
@@ -1291,6 +1294,9 @@ async function loadMessages() {
         if (error) throw error;
         
         chatMessages.innerHTML = '';
+        if (chatMessagesMobile) {
+            chatMessagesMobile.innerHTML = '';
+        }
         
         if (data && data.length > 0) {
             data.forEach(msg => {
@@ -1328,6 +1334,14 @@ function displayMessage(msg) {
     `;
     
     chatMessages.appendChild(messageDiv);
+    
+    // Also add to mobile chat if it exists
+    if (chatMessagesMobile) {
+        const mobileMessageDiv = messageDiv.cloneNode(true);
+        chatMessagesMobile.appendChild(mobileMessageDiv);
+        // Scroll mobile chat to bottom
+        chatMessagesMobile.scrollTop = chatMessagesMobile.scrollHeight;
+    }
 }
 
 // Scroll chat to bottom
@@ -1823,6 +1837,99 @@ async function checkAndDeleteRoom() {
     }
 }
 
+// Mobile chat elements
+const chatBtnMobile = document.getElementById('chatBtnMobile');
+const chatPanelOverlay = document.getElementById('chatPanelOverlay');
+const chatPanelClose = document.getElementById('chatPanelClose');
+const chatMessagesMobile = document.getElementById('chatMessagesMobile');
+const chatInputMobile = document.getElementById('chatInputMobile');
+const sendBtnMobile = document.getElementById('sendBtnMobile');
+const chatInputContainerMobile = document.getElementById('chatInputContainerMobile');
+const chatLoginPromptMobile = document.getElementById('chatLoginPromptMobile');
+
+// Show/hide mobile chat button based on screen size
+function toggleMobileChatButton() {
+    if (window.innerWidth <= 768) {
+        if (chatBtnMobile) chatBtnMobile.style.display = 'flex';
+    } else {
+        if (chatBtnMobile) chatBtnMobile.style.display = 'none';
+        if (chatPanelOverlay) chatPanelOverlay.classList.remove('show');
+    }
+}
+
+// Open mobile chat panel
+function openMobileChatPanel() {
+    if (chatPanelOverlay) {
+        chatPanelOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        // Focus on input if authenticated
+        if (chatInputMobile && isAuthenticated) {
+            setTimeout(() => chatInputMobile.focus(), 300);
+        }
+    }
+}
+
+// Close mobile chat panel
+function closeMobileChatPanel() {
+    if (chatPanelOverlay) {
+        chatPanelOverlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+// Sync chat messages between desktop and mobile
+function syncChatMessages() {
+    if (chatMessages && chatMessagesMobile) {
+        // Clone messages from desktop to mobile
+        chatMessagesMobile.innerHTML = chatMessages.innerHTML;
+        // Scroll to bottom
+        chatMessagesMobile.scrollTop = chatMessagesMobile.scrollHeight;
+    }
+}
+
+// Send message from mobile
+async function sendMessageMobile() {
+    // Prevent anonymous users from sending messages
+    if (!isAuthenticated) {
+        showNotification('Please log in to send messages', 'error');
+        return;
+    }
+    
+    const message = chatInputMobile.value.trim();
+    if (!message) return;
+    
+    // Use the same sendMessage function but with mobile input
+    const originalInput = chatInput.value;
+    chatInput.value = message;
+    await sendMessage();
+    chatInput.value = originalInput;
+    
+    // Clear mobile input
+    chatInputMobile.value = '';
+}
+
+// Update mobile chat UI based on authentication
+function updateMobileChatUI() {
+    if (!chatInputContainerMobile || !chatLoginPromptMobile) return;
+    
+    if (!isAuthenticated) {
+        chatInputContainerMobile.style.display = 'none';
+        chatLoginPromptMobile.style.display = 'block';
+    } else {
+        chatInputContainerMobile.style.display = 'flex';
+        chatLoginPromptMobile.style.display = 'none';
+        if (chatInputMobile) {
+            chatInputMobile.disabled = false;
+            chatInputMobile.placeholder = 'Type a message...';
+        }
+        if (sendBtnMobile) {
+            sendBtnMobile.disabled = false;
+            sendBtnMobile.style.opacity = '1';
+            sendBtnMobile.style.cursor = 'pointer';
+        }
+    }
+}
+
 // Event listeners
 sendBtn.addEventListener('click', sendMessage);
 
@@ -1831,6 +1938,342 @@ chatInput.addEventListener('keypress', (e) => {
         sendMessage();
     }
 });
+
+// Mobile chat event listeners
+if (chatBtnMobile) {
+    chatBtnMobile.addEventListener('click', openMobileChatPanel);
+}
+
+if (chatPanelClose) {
+    chatPanelClose.addEventListener('click', closeMobileChatPanel);
+}
+
+if (chatPanelOverlay) {
+    chatPanelOverlay.addEventListener('click', (e) => {
+        if (e.target === chatPanelOverlay) {
+            closeMobileChatPanel();
+        }
+    });
+}
+
+if (sendBtnMobile) {
+    sendBtnMobile.addEventListener('click', sendMessageMobile);
+}
+
+if (chatInputMobile) {
+    chatInputMobile.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessageMobile();
+        }
+    });
+}
+
+// Window resize handler
+window.addEventListener('resize', toggleMobileChatButton);
+
+// Initial setup
+toggleMobileChatButton();
+
+// Mobile Hamburger Menu - Initialize after DOM is ready
+let hamburgerMenuBtn, mobileMenuOverlay, mobileMenuClose, mobileMenuContent;
+
+function initMobileMenu() {
+    hamburgerMenuBtn = document.getElementById('hamburgerMenuBtn');
+    mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    mobileMenuClose = document.getElementById('mobileMenuClose');
+    mobileMenuContent = document.getElementById('mobileMenuContent');
+    
+    if (!hamburgerMenuBtn || !mobileMenuOverlay || !mobileMenuClose || !mobileMenuContent) {
+        console.warn('Mobile menu elements not found');
+        return;
+    }
+    
+    // Event listeners for hamburger menu
+    hamburgerMenuBtn.addEventListener('click', openMobileMenu);
+    mobileMenuClose.addEventListener('click', closeMobileMenu);
+    
+    mobileMenuOverlay.addEventListener('click', (e) => {
+        if (e.target === mobileMenuOverlay) {
+            closeMobileMenu();
+        }
+    });
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileMenu);
+} else {
+    initMobileMenu();
+}
+
+// Populate mobile menu with controls
+function populateMobileMenu() {
+    if (!mobileMenuContent) return;
+    
+    mobileMenuContent.innerHTML = '';
+    
+    // Get all visible control buttons from header
+    const controls = document.querySelectorAll('.room-controls .control-btn, .room-controls .theme-toggle-btn-room, .room-controls .chat-btn-mobile');
+    
+    controls.forEach(btn => {
+        // Skip theme toggle button
+        if (btn.id === 'themeToggleBtnRoom' || btn.classList.contains('theme-toggle-btn-room')) {
+            return;
+        }
+        
+        // Skip share button - it goes in the menu separately
+        if (btn.id === 'shareBtn' || btn.classList.contains('share-btn-icon')) {
+            return;
+        }
+        
+        // Skip chat button - it stays visible outside the menu
+        if (btn.id === 'chatBtnMobile') {
+            return;
+        }
+        
+        // Only add if button is visible
+        if (btn.offsetParent !== null || btn.style.display !== 'none') {
+            const menuItem = document.createElement('div');
+            menuItem.className = 'mobile-menu-item';
+            
+            // Get button text and icon
+            // Extract icon from first span, and text without the icon
+            const firstSpan = btn.querySelector('span:first-child');
+            const icon = firstSpan ? firstSpan.textContent.trim() : '';
+            
+            // Get text content, but remove the emoji if it's duplicated
+            let text = btn.textContent.trim() || btn.title;
+            // Remove the icon emoji from text if it appears at the start
+            if (icon && text.startsWith(icon)) {
+                text = text.substring(icon.length).trim();
+            }
+            
+            menuItem.innerHTML = `
+                <span>${icon}</span>
+                <span>${text}</span>
+            `;
+            
+            // Add click handler
+            menuItem.addEventListener('click', () => {
+                btn.click();
+                closeMobileMenu();
+            });
+            
+            mobileMenuContent.appendChild(menuItem);
+        }
+    });
+    
+    // Add raise hand button from audience section (with emoji)
+    const raiseHandBtnAudience = document.getElementById('raiseHandBtn');
+    if (raiseHandBtnAudience && (raiseHandBtnAudience.offsetParent !== null || raiseHandBtnAudience.style.display !== 'none')) {
+        const raiseHandMenuItem = document.createElement('div');
+        raiseHandMenuItem.className = 'mobile-menu-item';
+        
+        // Always use the hand emoji for raise hand
+        const icon = '✋';
+        let text = raiseHandBtnAudience.textContent.trim() || raiseHandBtnAudience.title;
+        // Remove emoji from text if it appears
+        if (text.includes('✋')) {
+            text = text.replace('✋', '').trim();
+        }
+        if (text.includes('Hand Raised')) {
+            text = 'Hand Raised';
+        } else if (text.includes('Raise Hand')) {
+            text = 'Raise Hand';
+        }
+        
+        raiseHandMenuItem.innerHTML = `
+            <span>${icon}</span>
+            <span>${text}</span>
+        `;
+        
+        raiseHandMenuItem.addEventListener('click', () => {
+            raiseHandBtnAudience.click();
+            closeMobileMenu();
+        });
+        
+        mobileMenuContent.appendChild(raiseHandMenuItem);
+    }
+    
+    // Add participants button
+    const participantsBtn = document.getElementById('participantsBtn');
+    if (participantsBtn && (participantsBtn.offsetParent !== null || participantsBtn.style.display !== 'none')) {
+        const participantsMenuItem = document.createElement('div');
+        participantsMenuItem.className = 'mobile-menu-item';
+        
+        const firstSpan = participantsBtn.querySelector('span:first-child');
+        const icon = firstSpan ? firstSpan.textContent.trim() : '';
+        let text = participantsBtn.textContent.trim() || participantsBtn.title;
+        if (icon && text.startsWith(icon)) {
+            text = text.substring(icon.length).trim();
+        }
+        
+        participantsMenuItem.innerHTML = `
+            <span>${icon}</span>
+            <span>${text}</span>
+        `;
+        
+        participantsMenuItem.addEventListener('click', () => {
+            participantsBtn.click();
+            closeMobileMenu();
+        });
+        
+        mobileMenuContent.appendChild(participantsMenuItem);
+    }
+    
+    // Add share button
+    const shareBtn = document.getElementById('shareBtn');
+    if (shareBtn && (shareBtn.offsetParent !== null || shareBtn.style.display !== 'none')) {
+        const shareMenuItem = document.createElement('div');
+        shareMenuItem.className = 'mobile-menu-item';
+        shareMenuItem.innerHTML = `
+            <span>🔗</span>
+            <span>Share</span>
+        `;
+        shareMenuItem.addEventListener('click', () => {
+            shareBtn.click();
+            closeMobileMenu();
+        });
+        mobileMenuContent.appendChild(shareMenuItem);
+    }
+    
+    // Add sponsor countdown or sponsor button based on status
+    const sponsorCountdown = document.getElementById('sponsorCountdown');
+    const sponsorTimeLeft = document.getElementById('sponsorTimeLeft');
+    const sponsorBtn = document.getElementById('sponsorBtn');
+    
+    // Check if countdown is active (visible)
+    const isCountdownActive = sponsorCountdown && 
+        (sponsorCountdown.style.display === 'flex' || 
+         sponsorCountdown.offsetParent !== null);
+    
+    if (isCountdownActive && sponsorTimeLeft) {
+        // Show countdown in menu
+        const countdownMenuItem = document.createElement('div');
+        countdownMenuItem.className = 'mobile-menu-item sponsor-countdown-item';
+        const timeText = sponsorTimeLeft.textContent || '--:--';
+        countdownMenuItem.innerHTML = `
+            <span>⭐</span>
+            <span>${timeText}</span>
+        `;
+        // Countdown is display only, no click action
+        mobileMenuContent.appendChild(countdownMenuItem);
+    } else if (sponsorBtn) {
+        // Show sponsor button when countdown is not active
+        const sponsorMenuItem = document.createElement('div');
+        sponsorMenuItem.className = 'mobile-menu-item';
+        
+        const firstSpan = sponsorBtn.querySelector('span:first-child');
+        const icon = firstSpan ? firstSpan.textContent.trim() : '⭐';
+        let text = sponsorBtn.textContent.trim() || sponsorBtn.title || 'Sponsor';
+        if (icon && text.startsWith(icon)) {
+            text = text.substring(icon.length).trim();
+        }
+        if (!text) text = 'Sponsor';
+        
+        sponsorMenuItem.innerHTML = `
+            <span>${icon}</span>
+            <span>${text}</span>
+        `;
+        
+        sponsorMenuItem.addEventListener('click', () => {
+            sponsorBtn.click();
+            closeMobileMenu();
+        });
+        
+        mobileMenuContent.appendChild(sponsorMenuItem);
+    }
+    
+    // Add End Meeting button (for host)
+    const endMeetingBtn = document.getElementById('endMeetingBtn');
+    if (endMeetingBtn && (endMeetingBtn.offsetParent !== null || endMeetingBtn.style.display !== 'none')) {
+        const endMeetingMenuItem = document.createElement('div');
+        endMeetingMenuItem.className = 'mobile-menu-item';
+        
+        const firstSpan = endMeetingBtn.querySelector('span:first-child');
+        const icon = firstSpan ? firstSpan.textContent.trim() : '';
+        let text = endMeetingBtn.textContent.trim() || endMeetingBtn.title;
+        if (icon && text.startsWith(icon)) {
+            text = text.substring(icon.length).trim();
+        }
+        
+        endMeetingMenuItem.innerHTML = `
+            <span>${icon}</span>
+            <span>${text}</span>
+        `;
+        
+        endMeetingMenuItem.addEventListener('click', () => {
+            endMeetingBtn.click();
+            closeMobileMenu();
+        });
+        
+        mobileMenuContent.appendChild(endMeetingMenuItem);
+    }
+    
+    // Add Leave button at the end
+    const leaveBtn = document.getElementById('leaveBtn');
+    if (leaveBtn) {
+        const leaveMenuItem = document.createElement('div');
+        leaveMenuItem.className = 'mobile-menu-item leave';
+        
+        const firstSpan = leaveBtn.querySelector('span:first-child');
+        const icon = firstSpan ? firstSpan.textContent.trim() : '';
+        let text = leaveBtn.textContent.trim() || leaveBtn.title;
+        if (icon && text.startsWith(icon)) {
+            text = text.substring(icon.length).trim();
+        }
+        
+        leaveMenuItem.innerHTML = `
+            <span>${icon}</span>
+            <span>${text}</span>
+        `;
+        
+        leaveMenuItem.addEventListener('click', () => {
+            leaveBtn.click();
+            closeMobileMenu();
+        });
+        
+        mobileMenuContent.appendChild(leaveMenuItem);
+    }
+}
+
+// Open mobile menu
+function openMobileMenu() {
+    if (mobileMenuOverlay) {
+        populateMobileMenu();
+        mobileMenuOverlay.classList.add('show');
+        mobileMenuOverlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close mobile menu
+function closeMobileMenu() {
+    if (mobileMenuOverlay) {
+        mobileMenuOverlay.classList.remove('show');
+        mobileMenuOverlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Event listeners are set up in initMobileMenu()
+
+// Update menu when controls change visibility
+const observer = new MutationObserver(() => {
+    if (mobileMenuOverlay && mobileMenuOverlay.classList.contains('show')) {
+        populateMobileMenu();
+    }
+});
+
+// Observe changes to room-controls
+const roomControls = document.querySelector('.room-controls');
+if (roomControls) {
+    observer.observe(roomControls, { 
+        childList: true, 
+        attributes: true, 
+        attributeFilter: ['style', 'class'] 
+    });
+}
 
 leaveBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to leave this room?')) {
@@ -2153,6 +2596,37 @@ function updateSponsorStatus(sponsorUntil) {
             clearInterval(sponsorCountdownInterval);
             sponsorCountdownInterval = null;
             
+            // Update mobile menu - replace countdown with sponsor button
+            const countdownMenuItem = document.querySelector('.mobile-menu-item.sponsor-countdown-item');
+            if (countdownMenuItem && mobileMenuContent && sponsorBtn) {
+                countdownMenuItem.remove();
+                // Add sponsor button to menu
+                const sponsorMenuItem = document.createElement('div');
+                sponsorMenuItem.className = 'mobile-menu-item';
+                const firstSpan = sponsorBtn.querySelector('span:first-child');
+                const icon = firstSpan ? firstSpan.textContent.trim() : '⭐';
+                let text = sponsorBtn.textContent.trim() || sponsorBtn.title || 'Sponsor';
+                if (icon && text.startsWith(icon)) {
+                    text = text.substring(icon.length).trim();
+                }
+                if (!text) text = 'Sponsor';
+                sponsorMenuItem.innerHTML = `
+                    <span>${icon}</span>
+                    <span>${text}</span>
+                `;
+                sponsorMenuItem.addEventListener('click', () => {
+                    sponsorBtn.click();
+                    closeMobileMenu();
+                });
+                // Insert before Leave button if it exists, otherwise append
+                const leaveMenuItem = mobileMenuContent.querySelector('.mobile-menu-item.leave');
+                if (leaveMenuItem) {
+                    mobileMenuContent.insertBefore(sponsorMenuItem, leaveMenuItem);
+                } else {
+                    mobileMenuContent.appendChild(sponsorMenuItem);
+                }
+            }
+            
             // Reload room to check if still sponsored
             loadRoom();
         } else {
@@ -2168,6 +2642,12 @@ function updateCountdown(until) {
     
     if (diff <= 0) {
         if (sponsorTimeLeft) sponsorTimeLeft.textContent = '00:00';
+        // Update mobile menu if open
+        const countdownMenuItem = document.querySelector('.mobile-menu-item.sponsor-countdown-item');
+        if (countdownMenuItem) {
+            const timeSpan = countdownMenuItem.querySelector('span:last-child');
+            if (timeSpan) timeSpan.textContent = '00:00';
+        }
         return;
     }
     
@@ -2184,6 +2664,13 @@ function updateCountdown(until) {
     
     if (sponsorTimeLeft) {
         sponsorTimeLeft.textContent = timeString;
+    }
+    
+    // Update mobile menu if open
+    const countdownMenuItem = document.querySelector('.mobile-menu-item.sponsor-countdown-item');
+    if (countdownMenuItem) {
+        const timeSpan = countdownMenuItem.querySelector('span:last-child');
+        if (timeSpan) timeSpan.textContent = timeString;
     }
 }
 

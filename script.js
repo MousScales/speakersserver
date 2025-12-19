@@ -26,11 +26,58 @@ function setupStartButton() {
             
             if (createForm) {
                 currentStep = 1;
+                // Reset form and hide next buttons
+                discussionForm.reset();
+                const nextStepBtn1 = document.getElementById('nextStepBtn1');
+                const nextStepBtn2 = document.getElementById('nextStepBtn2');
+                if (nextStepBtn1) nextStepBtn1.style.display = 'none';
+                if (nextStepBtn2) nextStepBtn2.style.display = 'none';
                 updateStepDisplay();
                 createForm.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
             }
         });
+    }
+}
+
+// Validate step
+function validateStep(step) {
+    if (step === 1) {
+        const titleInput = document.getElementById('discussionTitle');
+        return titleInput && titleInput.value.trim().length > 0;
+    } else if (step === 2) {
+        const descriptionInput = document.getElementById('discussionDescription');
+        return descriptionInput && descriptionInput.value.trim().length > 0;
+    } else if (step === 3) {
+        // Category is optional, so step 3 is always valid
+        return true;
+    }
+    return false;
+}
+
+// Update next button visibility based on input
+function updateNextButtonVisibility() {
+    const nextStepBtn1 = document.getElementById('nextStepBtn1');
+    const nextStepBtn2 = document.getElementById('nextStepBtn2');
+    const titleInput = document.getElementById('discussionTitle');
+    const descriptionInput = document.getElementById('discussionDescription');
+    
+    // Step 1: Show next button when title has text
+    if (nextStepBtn1 && titleInput) {
+        if (titleInput.value.trim().length > 0) {
+            nextStepBtn1.style.display = 'flex';
+        } else {
+            nextStepBtn1.style.display = 'none';
+        }
+    }
+    
+    // Step 2: Show next button when description has text
+    if (nextStepBtn2 && descriptionInput) {
+        if (descriptionInput.value.trim().length > 0) {
+            nextStepBtn2.style.display = 'flex';
+        } else {
+            nextStepBtn2.style.display = 'none';
+        }
     }
 }
 
@@ -60,6 +107,9 @@ function updateStepDisplay() {
     if (submitBtn) {
         submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
     }
+    
+    // Update next button visibility
+    updateNextButtonVisibility();
 }
 
 // Close form
@@ -70,6 +120,11 @@ function closeConversationForm() {
         discussionForm.reset();
         currentStep = 1;
         updateStepDisplay();
+        // Hide next buttons when form is closed/reset
+        const nextStepBtn1 = document.getElementById('nextStepBtn1');
+        const nextStepBtn2 = document.getElementById('nextStepBtn2');
+        if (nextStepBtn1) nextStepBtn1.style.display = 'none';
+        if (nextStepBtn2) nextStepBtn2.style.display = 'none';
     }
 }
 
@@ -106,8 +161,8 @@ async function displayRoomsByCategory() {
         { key: 'chilling', name: 'Chilling' }
     ];
     
-    // Process each category
-    for (const cat of categoryOrder) {
+    // Process all categories in parallel
+    const categoryPromises = categoryOrder.map(async (cat) => {
         let categoryRooms = [];
         
         if (cat.key === 'currently-live') {
@@ -144,11 +199,10 @@ async function displayRoomsByCategory() {
             grid.className = 'rooms-grid';
             
             if (categoryRooms.length > 0) {
-                // Create room cards for this category
-                for (const room of categoryRooms) {
-                    const card = await createRoomCard(room);
-                    grid.appendChild(card);
-                }
+                // Create all room cards in parallel for this category
+                const cardPromises = categoryRooms.map(room => createRoomCard(room));
+                const cards = await Promise.all(cardPromises);
+                cards.forEach(card => grid.appendChild(card));
             } else {
                 // Show "No current rooms available" message
                 grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem; white-space: nowrap;">No current rooms available</p>';
@@ -156,27 +210,37 @@ async function displayRoomsByCategory() {
             
             section.appendChild(header);
             section.appendChild(grid);
-            categorySections.appendChild(section);
+            
+            return { section, categoryRooms, cat, grid, header };
+        }
+        return null;
+    });
+    
+    // Wait for all categories to be created, then append them in order
+    const categoryResults = await Promise.all(categoryPromises);
+    categoryResults.forEach(result => {
+        if (result) {
+            categorySections.appendChild(result.section);
             
             // Check if grid scrolls (more rooms than fit in one row) and show "View all" button
-            if (categoryRooms.length > 0) {
+            if (result.categoryRooms.length > 0) {
                 // Wait for layout to be calculated
                 requestAnimationFrame(() => {
                     // Check if the grid has horizontal scrolling (more rooms than visible)
-                    if (grid.scrollWidth > grid.clientWidth) {
+                    if (result.grid.scrollWidth > result.grid.clientWidth) {
                         const viewAllButton = document.createElement('button');
                         viewAllButton.className = 'view-all-btn';
-                        viewAllButton.setAttribute('data-category', cat.key);
+                        viewAllButton.setAttribute('data-category', result.cat.key);
                         viewAllButton.textContent = 'View all';
                         viewAllButton.addEventListener('click', () => {
-                            showCategoryView(cat.key, cat.name);
+                            showCategoryView(result.cat.key, result.cat.name);
                         });
-                        header.appendChild(viewAllButton);
+                        result.header.appendChild(viewAllButton);
                     }
                 });
             }
         }
-    }
+    });
 }
 
 // Show all rooms in a category
@@ -237,6 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const descriptionInput = document.getElementById('discussionDescription');
     
     if (titleInput) {
+        // Show/hide next button as user types
+        titleInput.addEventListener('input', () => {
+            updateNextButtonVisibility();
+        });
+        
         titleInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && currentStep === 1 && titleInput.value.trim()) {
                 e.preventDefault();
@@ -261,6 +330,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (descriptionInput) {
+        // Show/hide next button as user types
+        descriptionInput.addEventListener('input', () => {
+            updateNextButtonVisibility();
+        });
+        
         descriptionInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.ctrlKey && currentStep === 2 && descriptionInput.value.trim()) {
                 e.preventDefault();
@@ -1135,7 +1209,7 @@ if (donateAmountDisplay) {
     donateAmountDisplay.textContent = '$0';
 }
 if (donateAmountInput) {
-    donateAmountInput.value = '$';
+    donateAmountInput.value = '$0';
     donateAmountInput.placeholder = '$0';
     // Ensure input only accepts numbers
     donateAmountInput.setAttribute('type', 'text');
@@ -1261,17 +1335,14 @@ if (donateAmountInput && donateAmountDisplay) {
     donateAmountInput.addEventListener('input', (e) => {
         // Remove all non-numeric characters (including $, commas, etc.)
         const value = e.target.value.replace(/[^0-9]/g, '');
-        if (donateAmountInput.value !== value) {
-            donateAmountInput.value = value;
-        }
         
-        if (value) {
-            const amount = parseInt(value) || 0;
+        if (value && parseInt(value) > 0) {
+            const amount = parseInt(value);
             // Show dollar sign in the input field itself
             donateAmountInput.value = `$${amount.toLocaleString()}`;
             donateAmountDisplay.textContent = `$${amount.toLocaleString()}`;
         } else {
-            donateAmountInput.value = '$';
+            donateAmountInput.value = '$0';
             donateAmountDisplay.textContent = '$0';
         }
         
@@ -1280,6 +1351,14 @@ if (donateAmountInput && donateAmountDisplay) {
         const quickAmounts = Array.from(donateQuickBtns).map(btn => parseInt(btn.getAttribute('data-amount')));
         if (!quickAmounts.includes(currentValue)) {
             donateQuickBtns.forEach(btn => btn.classList.remove('active'));
+        }
+    });
+    
+    // When input is focused and shows "$0", select the "0" so user can replace it
+    donateAmountInput.addEventListener('focus', () => {
+        if (donateAmountInput.value === '$0') {
+            // Select the "0" so typing replaces it
+            donateAmountInput.setSelectionRange(2, 2);
         }
     });
     
@@ -1295,10 +1374,10 @@ if (donateAmountInput && donateAmountDisplay) {
     donateAmountInput.addEventListener('keydown', (e) => {
         // If user tries to delete the dollar sign, prevent it and move cursor
         if ((e.key === 'Backspace' || e.key === 'Delete') && donateAmountInput.selectionStart <= 1) {
-            if (donateAmountInput.value === '$' || donateAmountInput.value.length <= 1) {
+            if (donateAmountInput.value === '$0' || donateAmountInput.value === '$' || donateAmountInput.value.length <= 1) {
                 e.preventDefault();
-                donateAmountInput.value = '$';
-                donateAmountInput.setSelectionRange(1, 1);
+                donateAmountInput.value = '$0';
+                donateAmountInput.setSelectionRange(2, 2);
             }
         }
     });
@@ -1312,7 +1391,7 @@ if (donateAmountInput && donateAmountDisplay) {
             const amount = parseInt(numbersOnly) || 0;
             donateAmountInput.value = `$${amount.toLocaleString()}`;
         } else {
-            donateAmountInput.value = '$';
+            donateAmountInput.value = '$0';
         }
         donateAmountInput.dispatchEvent(new Event('input', { bubbles: true }));
     });
@@ -1429,7 +1508,7 @@ if (donateSubmitBtn && donateAmountInput) {
                 setTimeout(() => {
                     closeDonatePanel();
                     // Reset form
-                    donateAmountInput.value = '$';
+                    donateAmountInput.value = '$0';
                     if (donateAmountDisplay) {
                         donateAmountDisplay.textContent = '$0';
                     }

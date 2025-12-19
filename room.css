@@ -510,6 +510,59 @@
     align-items: center;
 }
 
+/* Header right controls - sponsor countdown and leave button */
+.header-right-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Participants button - after title and role */
+.participants-btn-header {
+    margin-left: 0.75rem;
+}
+
+/* Hide emojis in control buttons on desktop only (but not in share-btn-icon) */
+@media (min-width: 769px) {
+    .control-btn span:first-child {
+        display: none;
+    }
+    
+    /* Don't hide emoji in participants button */
+    .participants-btn-header span:first-child {
+        display: inline !important;
+    }
+    
+    /* Hide theme toggle button on desktop */
+    .theme-toggle-btn-room {
+        display: none !important;
+    }
+}
+
+/* Hamburger Menu Button - Hidden on desktop */
+.hamburger-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.hamburger-menu-btn:hover {
+    background: var(--bg-tertiary);
+}
+
+.hamburger-menu-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 /* Theme Toggle Button for Room */
 .theme-toggle-btn-room {
     display: flex;
@@ -916,6 +969,28 @@
 
 .audience-search::placeholder {
     color: var(--text-secondary);
+}
+
+/* Audience header controls container */
+.audience-header-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Raise Hand button in audience section */
+.raise-hand-audience {
+    display: none; /* Will be shown by JavaScript when needed */
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Only show raise hand button on desktop */
+@media (min-width: 769px) {
+    .raise-hand-audience[style*="display: flex"],
+    .raise-hand-audience[style*="display:block"] {
+        display: flex !important;
+    }
 }
 
 /* Audience list - grid layout with horizontal scroll */
@@ -1812,29 +1887,420 @@
 @media (max-width: 768px) {
     .room-container {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto 1fr;
     }
     
+    /* Hide chat sidebar on mobile - will be shown as slide-out panel */
     .chat-sidebar {
-        border-left: none;
+        display: none !important;
+    }
+    
+    /* Mobile chat button in header - hidden by default, shown on mobile */
+    .chat-btn-mobile {
+        display: none;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    
+    .chat-btn-mobile:hover {
+        background: var(--bg-secondary);
+        border-color: var(--accent-blue);
+    }
+    
+    /* Desktop chat sidebar hidden on mobile */
+    .chat-sidebar {
+        display: none;
+    }
+    
+    /* Mobile chat panel overlay */
+    .chat-panel-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: none;
+        justify-content: flex-end;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .chat-panel-overlay.show {
+        display: flex;
+    }
+    
+    /* Mobile chat panel */
+    .chat-panel-mobile {
+        width: 100%;
+        max-width: 90vw;
+        height: 100%;
+        background: var(--bg-secondary);
+        border-left: 1px solid var(--border-color);
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        animation: slideInFromRight 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    @keyframes slideInFromRight {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+    
+    .chat-panel-header-mobile {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+    
+    .chat-panel-header-mobile h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+    
+    .chat-panel-close {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    
+    .chat-panel-close:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .chat-panel-content-mobile {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .chat-panel-content-mobile .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+    
+    .chat-panel-content-mobile .chat-input-container {
+        padding: 1rem;
         border-top: 1px solid var(--border-color);
-        max-height: 40vh;
+        background: var(--bg-secondary);
     }
     
     .room-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        position: relative; /* For absolute positioning of Leave button */
     }
     
     .room-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         flex-wrap: wrap;
     }
     
+    .room-info h1 {
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+        flex-shrink: 1;
+    }
+    
+    .room-category {
+        font-size: 0.625rem;
+        padding: 0.1875rem 0.375rem;
+        flex-shrink: 0;
+    }
+    
+    .room-role {
+        font-size: 0.625rem;
+        padding: 0.1875rem 0.375rem;
+        flex-shrink: 0;
+    }
+    
+    /* Show hamburger menu button on mobile */
+    .hamburger-menu-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Hide controls on mobile, except sponsor button */
     .room-controls {
+        display: none !important;
+    }
+    
+    /* Show chat button on mobile (outside menu) - positioned to the left of hamburger */
+    .chat-btn-mobile {
+        display: flex !important;
+        position: absolute;
+        right: 4rem; /* Position further to the left of hamburger menu */
+        padding: 0.5rem;
+        font-size: 1.25rem;
+        margin: 0;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .chat-btn-mobile:hover {
+        background: var(--bg-secondary);
+        border-color: var(--accent-blue);
+    }
+    
+    .chat-btn-mobile span {
+        display: block;
+        line-height: 1;
+    }
+    
+    /* Hide sponsor button and countdown from header on mobile (they're in the menu) */
+    .room-controls #sponsorBtn {
+        display: none !important;
+    }
+    
+    .header-right-controls #sponsorCountdown {
+        display: none !important;
+    }
+    
+    /* Style for sponsor countdown in mobile menu */
+    .mobile-menu-item.sponsor-countdown-item {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: white;
+        font-weight: 600;
+        cursor: default;
+    }
+    
+    .mobile-menu-item.sponsor-countdown-item:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    }
+    
+    .mobile-menu-item.sponsor-countdown-item span:last-child {
+        font-family: 'Courier New', monospace;
+        letter-spacing: 0.05em;
+    }
+    
+    /* Hide End Meeting button from header on mobile (it's in the menu) */
+    .room-controls #endMeetingBtn {
+        display: none !important;
+    }
+    
+    /* Hide Share button from header on mobile (it's in the menu) */
+    .room-controls #shareBtn,
+    .share-btn-icon {
+        display: none !important;
+    }
+    
+    /* Hide raise hand button from audience section on mobile */
+    .raise-hand-audience {
+        display: none !important;
+    }
+    
+    /* Hide participants button from header on mobile (it's in menu) */
+    .participants-btn-header {
+        display: none !important;
+    }
+    
+    /* Hide Leave button from header on mobile (it's in the hamburger menu) */
+    #leaveBtn {
+        display: none !important;
+    }
+    
+    /* Ensure hamburger menu is on the far right */
+    .hamburger-menu-btn {
+        margin-left: auto;
+        z-index: 10;
+    }
+    
+    /* Mobile Menu Overlay */
+    .mobile-menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        overflow-x: auto;
-        flex-wrap: nowrap;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: none;
+        justify-content: flex-end;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .mobile-menu-overlay.show {
+        display: flex;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    /* Mobile Menu Panel */
+    .mobile-menu-panel {
+        width: 100%;
+        max-width: 85vw;
+        height: 100%;
+        background: var(--bg-secondary);
+        border-left: 1px solid var(--border-color);
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        animation: slideInFromRight 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .mobile-menu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: var(--bg-secondary);
+        z-index: 10;
+    }
+    
+    .mobile-menu-header h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+    
+    .mobile-menu-close {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    
+    .mobile-menu-close:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .mobile-menu-content {
+        flex: 1;
+        padding: 0.5rem 0;
+        overflow-y: auto;
+    }
+    
+    .mobile-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1.25rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.2s;
+        cursor: pointer;
+        font-size: 0.9375rem;
+    }
+    
+    .mobile-menu-item:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .mobile-menu-item span:first-child {
+        font-size: 1.125rem;
+        min-width: 24px;
+        text-align: center;
+    }
+    
+    .mobile-menu-item.leave {
+        color: #ef4444;
+        border-top: 2px solid var(--border-color);
+        margin-top: 0.5rem;
+    }
+    
+    .mobile-menu-item.leave:hover {
+        background: rgba(239, 68, 68, 0.1);
+    }
+    
+    .control-btn {
+        padding: 0.5rem 0.625rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .control-btn span:first-child {
+        font-size: 0.875rem;
+    }
+    
+    .theme-toggle-btn-room {
+        padding: 0.375rem;
+        flex-shrink: 0;
+    }
+    
+    .theme-toggle-btn-room svg {
+        width: 16px;
+        height: 16px;
     }
     
     .participants-panel {
@@ -1972,6 +2438,31 @@
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
+/* Share button - Apple share icon, no border/box */
+.share-btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.share-btn-icon:hover {
+    background: var(--bg-tertiary);
+    opacity: 0.8;
+}
+
+.share-btn-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Old share button style - kept for compatibility */
 .share-btn {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
