@@ -1244,6 +1244,19 @@
             }
         });
     </script>
+    
+    <!-- Vercel Analytics -->
+    <script>
+        (function() {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.textContent = `
+                import { inject } from 'https://esm.sh/@vercel/analytics';
+                inject();
+            `;
+            document.head.appendChild(script);
+        })();
+    </script>
 </body>
 </html>
 
